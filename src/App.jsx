@@ -3,6 +3,7 @@ import Landing from "./pages/Landing"
 import UserType from "./pages/UserType"
 import Socials from "./pages/Socials"
 import Categories from "./pages/Categories"
+import Notifications from "./pages/Notifications"
 function App() {
 
   return (
@@ -13,6 +14,7 @@ function App() {
       <Route path="/user-type" element={<UserType />} />
       <Route path="/socials" element={<Socials />} />
       <Route path="/categories" element={<Categories />} />
+      <Route path="/notifications" element={<Notifications />} />
     </Routes>
     </Router>
   )
