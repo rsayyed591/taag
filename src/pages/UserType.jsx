@@ -9,7 +9,7 @@ function UserType() {
     if (selectedType) {
       // Store the selected user type in localStorage
       localStorage.setItem("userType", selectedType)
-      navigate("/socials")
+      navigate("/auth/socials")
     }
   }
 

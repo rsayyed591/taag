@@ -19,7 +19,7 @@ function Socials() {
   const handleContinue = () => {
     // Store social media information in localStorage
     localStorage.setItem("socials", JSON.stringify(formData))
-    navigate("/categories")
+    navigate("/auth/categories")
   }
 
   const clearField = (field) => {

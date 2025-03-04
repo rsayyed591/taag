@@ -7,12 +7,12 @@ function Notifications() {
   const [showNotification, setShowNotification] = useState(true);
 
   const handleContinue = () => {
-    navigate("/phone-verification");
+    navigate("/auth/phone-verification");
   };
 
   const handleAllow = () => {
     localStorage.setItem("notifications", "allowed");
-    navigate("/phone-verification");
+    navigate("/auth/phone-verification");
   };
 
   const handleDontAllow = () => {

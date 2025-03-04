@@ -31,7 +31,7 @@ function Categories() {
   const handleContinue = () => {
     // Store selected categories in localStorage
     localStorage.setItem("categories", JSON.stringify(selectedCategories))
-    navigate("/notifications")
+    navigate("/auth/notifications")
   }
 
   return (
