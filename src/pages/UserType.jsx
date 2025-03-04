@@ -14,7 +14,7 @@ function UserType() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col px-6 pt-6">
+    <div className="h-[852px] min-h-screen flex flex-col px-6 pt-6">
       {/* Content */}
       <div className="flex-1 flex flex-col">
         <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium">Select your preferred <br/> user type</h2>
@@ -47,7 +47,7 @@ function UserType() {
 
 
         {/* Continue Button */}
-        <div className="mt-auto ">
+        <div className="mt-auto flex justify-center">
           <button className="btn-primary2 mb-12" onClick={handleContinue} disabled={!selectedType}>
             Continue
           </button>

@@ -27,7 +27,7 @@ function Socials() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col px-6 pt-6">
+    <div className="h-[852px] min-h-screen flex flex-col px-6 pt-6">
       {/* Content */}
       <div className="flex-1 flex flex-col">
         <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium">Add your socials to help us <br /> find you for better <br /> campaigns!</h2>
@@ -117,7 +117,7 @@ function Socials() {
         </div>
 
         {/* Continue Button */}
-        <div className="mt-auto ">
+        <div className="mt-auto flex justify-center">
           <button className="btn-primary2 mb-12" onClick={handleContinue}>
             Continue
           </button>

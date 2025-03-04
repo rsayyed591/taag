@@ -8,7 +8,7 @@ function Landing() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="h-[852px] min-h-screen flex flex-col relative">
       {/* Background image */}
       <div className="absolute inset-0 z-0">
         <img src="/hero.png" alt="Background" className="w-full h-full object-cover" />
