@@ -1,41 +1,57 @@
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 function UserType() {
   const navigate = useNavigate()
+  const [selectedType, setSelectedType] = useState(null)
 
   const handleContinue = () => {
-    navigate("/user-type")
+    if (selectedType) {
+      // Store the selected user type in localStorage
+      localStorage.setItem("userType", selectedType)
+      navigate("/socials")
+    }
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative">
-      {/* Background image */}
-      <div className="absolute inset-0 z-0">
-        <img src="/hero.png" alt="Background" className="w-full h-full object-cover" />
-      </div>
-
+    <div className="min-h-screen flex flex-col px-6 pt-6">
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center z-10 p-6 text-white">
-        {/* Logo */}
-        <div className="bg-black rounded-full w-24 h-24 flex items-center justify-center mb-4">
-          <h1 className="text-2xl font-bold">Taag</h1>
+      <div className="flex-1 flex flex-col">
+        <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium">Select your preferred <br/> user type</h2>
+        <p className="text-[15px] leading-[20.49px] font-manrope font-medium text-[#979797] mb-8">Select the option defining your role</p>
+
+        {/* User Type Options */}
+        <div className="grid grid-cols-2 gap-4 place-items-center mb-8">
+            <div
+                className={`option-card ${selectedType === "Agency" ? "selected" : ""}`}
+                onClick={() => setSelectedType("Agency")}
+            >
+                Agency
+            </div>
+
+            <div
+                className={`option-card ${selectedType === "Brand" ? "selected" : ""}`}
+                onClick={() => setSelectedType("Brand")}
+            >
+                Brand
+            </div>
+
+            <div
+                className={`option-card ${selectedType === "Creator" ? "selected" : ""}`}
+                onClick={() => setSelectedType("Creator")}
+            >
+                Creator
+            </div>
         </div>
 
-        {/* Tagline */}
-        <p className="text-lg mb-12">Track Your Brand Value</p>
 
-        {/* Get Started Text */}
-        <p className="mb-2">Get Started as</p>
 
         {/* Continue Button */}
-        <button className="btn-primary mt-4" onClick={handleContinue}>
-          Continue
-        </button>
-      </div>
-
-      {/* Footer */}
-      <div className="p-4 text-center text-white z-10">
-        <p className="text-xs">© Taag {new Date().getFullYear()}</p>
+        <div className="mt-auto ">
+          <button className="btn-primary mb-12" onClick={handleContinue} disabled={!selectedType}>
+            Continue
+          </button>
+        </div>
       </div>
     </div>
   )
