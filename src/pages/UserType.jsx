@@ -48,7 +48,7 @@ function UserType() {
 
         {/* Continue Button */}
         <div className="mt-auto ">
-          <button className="btn-primary mb-12" onClick={handleContinue} disabled={!selectedType}>
+          <button className="btn-primary2 mb-12" onClick={handleContinue} disabled={!selectedType}>
             Continue
           </button>
         </div>

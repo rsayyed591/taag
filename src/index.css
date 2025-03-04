@@ -27,6 +27,13 @@ body {
   @apply border-2 border-[#2dd4bf] text-[#2dd4bf] py-2.5 px-6 rounded-full font-medium hover:bg-[#2dd4bf] hover:text-white transition-colors;
 }
 
+.btn-primary2 {
+  @apply bg-[#12766A] bg-opacity-10 text-[#12766A] text-[15px] font-manrope font-semibold 
+    leading-[20.49px] tracking-[0] text-center 
+    w-[332px] h-[48px] rounded-[24px] 
+    hover:bg-[#55f0de] hover:bg-opacity-50 transition-colors;
+}
+
 .option-card {
   @apply border border-black w-[165px] h-[48px] rounded-[24px] text-[#12766A] text-center cursor-pointer transition-all flex items-center justify-center;
 }

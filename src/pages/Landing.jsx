@@ -24,10 +24,8 @@ function Landing() {
 
         {/* Tagline */}
         <p className="text-[15px] leading-[20.49px] tracking-[0] font-manrope font-medium text-center mb-12">
-  Track Your Brand Value
-</p>
-
-
+          Track Your Brand Value
+        </p>
       </div>
 
       {/* Footer */}
