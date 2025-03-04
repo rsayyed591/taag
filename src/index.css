@@ -42,3 +42,27 @@ body {
   @apply bg-[#12766A1A] border-[2px] border-[#12766A];
 }
 
+.category-card {
+  @apply border-2 border-gray-200 rounded-full py-2 px-4 text-center cursor-pointer transition-all;
+}
+
+.category-card.selected {
+  @apply border-[#2dd4bf] bg-[#2dd4bf] text-white;
+}
+
+.input-field {
+  @apply w-full border-b-2 border-gray-300 py-2 px-1 focus:outline-none focus:border-[#2dd4bf];
+}
+
+.otp-input {
+  @apply w-14 h-14 text-center text-2xl border-2 border-gray-300 rounded-md focus:outline-none focus:border-[#2dd4bf];
+}
+
+.phone-container {
+  @apply relative;
+}
+
+.phone-container .clear-btn {
+  @apply absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400;
+}
+
