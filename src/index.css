@@ -35,7 +35,7 @@ body {
 }
 
 .option-card {
-  @apply border border-black w-[165px] h-[48px] rounded-[24px] text-[#12766A] text-center cursor-pointer transition-all flex items-center justify-center;
+  @apply border border-black min-w-[120px] max-w-[180px] h-[48px] rounded-[24px] text-[#12766A] text-[15px] py-3 px-6 text-center cursor-pointer transition-all flex items-center justify-center w-fit;
 }
 
 .option-card.selected {
@@ -43,11 +43,12 @@ body {
 }
 
 .category-card {
-  @apply border-2 border-gray-200 rounded-full py-2 px-4 text-center cursor-pointer transition-all;
+  @apply border border-black min-w-[120px] max-w-[180px] h-[48px] rounded-[24px] text-[#12766A] text-[15px] py-3 px-6 text-center cursor-pointer transition-all flex items-center justify-center w-fit;
 }
 
+
 .category-card.selected {
-  @apply border-[#2dd4bf] bg-[#2dd4bf] text-white;
+  @apply bg-[#12766A1A] border-[2px] border-[#12766A];
 }
 
 .input-field {

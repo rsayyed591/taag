@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, BrowserRouter as Router } from "react-router-d
 import Landing from "./pages/Landing"
 import UserType from "./pages/UserType"
 import Socials from "./pages/Socials"
+import Categories from "./pages/Categories"
 function App() {
 
   return (
@@ -11,6 +12,7 @@ function App() {
       <Route path="/landing" element={<Landing />} />
       <Route path="/user-type" element={<UserType />} />
       <Route path="/socials" element={<Socials />} />
+      <Route path="/categories" element={<Categories />} />
     </Routes>
     </Router>
   )

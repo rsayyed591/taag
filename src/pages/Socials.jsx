@@ -27,7 +27,7 @@ function Socials() {
   }
 
   return (
-    <div className="h-[852px] min-h-screen flex flex-col px-6 pt-6">
+    <div className="min-h-screen flex flex-col px-6 pt-6">
       {/* Content */}
       <div className="flex-1 flex flex-col">
         <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium">Add your socials to help us <br /> find you for better <br /> campaigns!</h2>
