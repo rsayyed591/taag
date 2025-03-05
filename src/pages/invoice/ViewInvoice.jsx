@@ -276,6 +276,10 @@ function ViewInvoice() {
                 <p>{invoice.accountDetails.accountType || "N/A"}</p>
               </div>
               <div>
+                <p className="text-sm text-gray-500">Beneficiary Name</p>
+                <p>{invoice.accountDetails.beneficiaryName || "N/A"}</p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-500">Account Number</p>
                 <p>{invoice.accountDetails.accountNumber || "N/A"}</p>
               </div>

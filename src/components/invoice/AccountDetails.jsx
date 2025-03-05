@@ -1,14 +1,15 @@
-"use client"
-
-import { useState } from "react"
-import { ChevronDown, ChevronUp, Edit2 } from "lucide-react"
+import { useState } from "react";
+import { ChevronDown, ChevronUp, Edit2 } from "lucide-react";
 
 function AccountDetails({ data, onEdit, readOnly = true }) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <div className="border-b border-gray-200">
-      <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+      <div
+        className="flex items-center justify-between p-4 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center gap-2">
           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
           <span className="text-gray-600">Account Details</span>
@@ -16,8 +17,8 @@ function AccountDetails({ data, onEdit, readOnly = true }) {
         {readOnly && (
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              onEdit()
+              e.stopPropagation();
+              onEdit();
             }}
           >
             <Edit2 className="w-5 h-5 text-[#12766A]" />
@@ -52,11 +53,28 @@ function AccountDetails({ data, onEdit, readOnly = true }) {
               </div>
             </div>
             <div>
-              <label className="text-sm text-gray-500">Bank Account No.</label>
+              <label className="text-sm text-gray-500">Beneficiary Name</label>
               <input
                 type="text"
+                value={data.beneficiaryName || ""}
+                onChange={readOnly ? undefined : (e) => data.onChange("beneficiaryName", e.target.value)}
+                readOnly={readOnly}
+                className="w-full p-2 mt-1 border border-gray-200 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-gray-500">Bank Account No.</label>
+              <input
+                type="number"
                 value={data.accountNumber || ""}
-                onChange={readOnly ? undefined : (e) => data.onChange("accountNumber", e.target.value)}
+                onChange={
+                  readOnly
+                    ? undefined
+                    : (e) => {
+                        const value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
+                        data.onChange("accountNumber", value);
+                      }
+                }
                 readOnly={readOnly}
                 className="w-full p-2 mt-1 border border-gray-200 rounded-md"
               />
@@ -85,8 +103,7 @@ function AccountDetails({ data, onEdit, readOnly = true }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default AccountDetails
-
+export default AccountDetails;
