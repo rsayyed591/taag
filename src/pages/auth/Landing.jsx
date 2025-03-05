@@ -27,7 +27,7 @@ function Landing() {
 
         {/* Tagline */}
         <p className="sub-header2 font-medium text-center mb-12 md:text-xl md:mb-16">
-          Track Your Brand Value
+          Empower Your Brand, Track Your Value
         </p>
       </div>
 
@@ -40,18 +40,27 @@ function Landing() {
         
         {/* Continue Button */}
         <div className="flex justify-center">
-          <button className="btn-primary mt-4" onClick={handleContinue}>
+          <button className="btn-primary mt-4 px-6 py-2 text-sm md:text-base">
             Continue
           </button>
         </div>
 
-        {/* Already a user? Sign in */}
-        <p className="mt-4 text-sm text-[#F6F5EB] font-medium md:text-base">
-          Already a user?{" "}
-          <button className="text-[#2dd4bf] underline font-semibold" onClick={handleSignIn}>
-            Sign in
+        {/* Divider */}
+        <div className="flex items-center justify-center my-6">
+          <hr className="w-1/3 border-t border-[#F6F5EB]" />
+          <span className="px-2 text-sm font-medium text-[#F6F5EB]">OR</span>
+          <hr className="w-1/3 border-t border-[#F6F5EB]" />
+        </div>
+
+        {/* Sign In Section */}
+        <div className="flex justify-center">
+          <button
+            className="btn-secondary mt-2 px-6 py-2 text-sm md:text-base border border-[#2dd4bf] text-[#2dd4bf] rounded-md hover:bg-[#2dd4bf] hover:text-black transition-all"
+            onClick={handleSignIn}
+          >
+            Sign In
           </button>
-        </p>
+        </div>
       </div>
     </div>
   );
