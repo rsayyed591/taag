@@ -23,6 +23,18 @@ body {
   background: rgb(var(--background-rgb));
 }
 
+.header{
+  @apply text-[#1D1D1F] text-[24px] font-manrope font-medium leading-[32.78px] tracking-[0] md:text-center
+}
+
+.sub-header{
+  @apply text-[12px] font-manrope font-medium leading-[16.39px] tracking-[0] md:text-center
+}
+
+.sub-header2{
+  @apply text-[15px] font-manrope leading-[20.49px] tracking-[0]
+}
+
 /* Fixed height container to prevent unnecessary scrolling */
 .page-container{
   @apply min-h-screen h-[100%] flex flex-col relative overflow-auto;
