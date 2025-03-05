@@ -1,27 +1,26 @@
 {
-    "rewrites": [
-      {
-        "source": "/auth/:path*",
-        "destination": "/index.html"
-      }
-    ],
-    "redirects": [
-      {
-        "source": "/auth",
-        "destination": "/auth/user-type",
-        "permanent": true
-      }
-    ],
-    "headers": [
-      {
-        "source": "/(.*)",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "s-maxage=1, stale-while-revalidate"
-          }
-        ]
-      }
-    ]
-  }
-  
+  "rewrites": [
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/auth",
+      "destination": "/auth/user-type",
+      "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=1, stale-while-revalidate"
+        }
+      ]
+    }
+  ]
+}
