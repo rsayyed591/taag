@@ -86,55 +86,57 @@ function OtpVerification() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col px-6">
-      {/* Heading at the Top */}
-      <div className="pt-6">
-        <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium">
-          Please verify your Phone number
-        </h2>
-        <p className="text-[15px] font-manrope leading-[20.49px] font-medium text-[#979797]">
-          We've sent a one-time passcode to <span className="font-semibold text-[#12766A]">+91 {phoneNumber}</span>. Enter the code below.
-        </p>
-      </div>
-
-      <div className="flex-1 flex flex-col items-center justify-center mb-16">
-        {/* OTP Input */}
-        <div className="w-full max-w-sm mb-6">
-          <label className="text-[12px] font-manrope leading-[16.39px] font-medium mb-6 ml-8 block text-[#1D1D1F]">Verification code</label>
-          <div className="flex gap-3 justify-center">
-            {otp.map((digit, index) => (
-              <input
-                key={index}
-                ref={(el) => (inputRefs.current[index] = el)}
-                type="text"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleInputChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                className="otp-input"
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="text-center mb-6">
-          <p className="text-[15px] font-manrope leading-[20.49px] font-medium text-[#979797]">
-            Didn't receive a code?{" "}
-            {canRetry ? (
-              <button className="text-[#12766A] font-medium" onClick={handleRetry}>
-                Retry
-              </button>
-            ) : (
-              <span><span className="font-semibold text-[#12766A]">Retry</span> in {formatTime(timer)}</span>
-            )}
+    <div className="page-container">
+      <div className="content-container">
+        {/* Heading at the Top */}
+        <div className="pt-6 md:pt-12">
+          <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium md:text-center">
+            Please verify your Phone number
+          </h2>
+          <p className="text-[15px] font-manrope leading-[20.49px] font-medium text-[#979797] md:text-center md:mt-6">
+            We've sent a one-time passcode to <span className="font-semibold text-[#12766A]">+91 {phoneNumber}</span>. Enter the code below.
           </p>
         </div>
 
-        {/* Continue Button */}
-        <div className="w-full max-w-sm">
-          <button className="btn-primary2 w-full py-3" onClick={handleContinue} disabled={!otp.every((digit) => digit !== "")}>
-            Continue
-          </button>
+        <div className="flex-1 flex flex-col items-center justify-center mt-8 mb-16 md:my-12">
+          {/* OTP Input */}
+          <div className="w-full max-w-sm mb-6 md:max-w-md">
+            <label className="text-[12px] font-manrope leading-[16.39px] font-medium mb-6 ml-8 block text-[#1D1D1F] md:text-sm md:ml-0">Verification code</label>
+            <div className="flex gap-3 justify-center md:gap-4">
+              {otp.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={(el) => (inputRefs.current[index] = el)}
+                  type="text"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleInputChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  className="otp-input md:w-16 md:h-16 md:text-3xl"
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center mb-6">
+            <p className="text-[15px] font-manrope leading-[20.49px] font-medium text-[#979797]">
+              Didn't receive a code?{" "}
+              {canRetry ? (
+                <button className="text-[#12766A] font-medium" onClick={handleRetry}>
+                  Retry
+                </button>
+              ) : (
+                <span><span className="font-semibold text-[#12766A]">Retry</span> in {formatTime(timer)}</span>
+              )}
+            </p>
+          </div>
+
+          {/* Continue Button */}
+          <div className="w-full max-w-sm md:max-w-md">
+            <button className="btn-primary2 w-full py-3" onClick={handleContinue} disabled={!otp.every((digit) => digit !== "")}>
+              Continue
+            </button>
+          </div>
         </div>
       </div>
     </div>
