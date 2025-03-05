@@ -27,7 +27,7 @@ function Landing() {
 
         {/* Tagline */}
         <p className="sub-header2 font-medium text-center mb-12 md:text-xl md:mb-16">
-          Empower Your Brand, Track Your Value
+          Track Your Brand Value
         </p>
       </div>
 
@@ -37,25 +37,24 @@ function Landing() {
         <p className="mb-2 text-[12px] leading-[16.39px] tracking-[0.16em] font-manrope font-medium text-center md:text-base">
           GET STARTED AS
         </p>
-        
-        {/* Continue Button */}
-        <div className="flex justify-center">
-          <button className="btn-primary mt-4 px-6 py-2 text-sm md:text-base">
+
+        {/* Buttons Section */}
+        <div className="flex flex-col items-center gap-4 w-full max-w-xs mx-auto">
+          {/* Continue Button */}
+          <button className="btn-primary px-6 py-3 w-full" onClick={handleContinue}>
             Continue
           </button>
-        </div>
 
-        {/* Divider */}
-        <div className="flex items-center justify-center my-6">
-          <hr className="w-1/3 border-t border-[#F6F5EB]" />
-          <span className="px-2 text-sm font-medium text-[#F6F5EB]">OR</span>
-          <hr className="w-1/3 border-t border-[#F6F5EB]" />
-        </div>
+          {/* Divider with "OR" */}
+          <div className="flex items-center w-full my-2">
+            <hr className="flex-grow border-t border-gray-400" />
+            <span className="mx-3 text-gray-400 text-sm font-medium">OR</span>
+            <hr className="flex-grow border-t border-gray-400" />
+          </div>
 
-        {/* Sign In Section */}
-        <div className="flex justify-center">
+          {/* Sign In Button */}
           <button
-            className="btn-secondary mt-2 px-6 py-2 text-sm md:text-base border border-[#2dd4bf] text-[#2dd4bf] rounded-md hover:bg-[#2dd4bf] hover:text-black transition-all"
+            className="btn-outline px-6 pb-3 w-full"
             onClick={handleSignIn}
           >
             Sign In
