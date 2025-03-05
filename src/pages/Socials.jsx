@@ -1,36 +1,37 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { X } from "lucide-react"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { X } from 'lucide-react';
 
 function Socials() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     instagramId: "",
     youtubeId: "",
     instagramReelCost: "",
     youtubeVideoCost: "",
-  })
+  });
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleContinue = () => {
     // Store social media information in localStorage
-    localStorage.setItem("socials", JSON.stringify(formData))
-    navigate("/auth/categories")
-  }
+    localStorage.setItem("socials", JSON.stringify(formData));
+    navigate("/auth/categories");
+  };
 
   const clearField = (field) => {
-    setFormData((prev) => ({ ...prev, [field]: "" }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: "" }));
+  };
 
   return (
-    <div className="min-h-screen flex flex-col px-6 pt-6">
-      {/* Content */}
-      <div className="flex-1 flex flex-col">
-        <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium">Add your socials to help us <br /> find you for better <br /> campaigns!</h2>
+    <div className="page-container">
+      <div className="content-container pt-6 md:pt-12">
+        <h2 className="mb-2 text-2xl leading-[32.78px] font-manrope font-medium md:text-center">
+          Add your socials to help us find you for better campaigns!
+        </h2>
 
         {/* Social Media Form */}
         <div className="space-y-6 mt-8">
@@ -117,15 +118,14 @@ function Socials() {
         </div>
 
         {/* Continue Button */}
-        <div className="mt-auto flex justify-center">
-          <button className="btn-primary2 mb-12" onClick={handleContinue}>
+        <div className="mt-auto flex justify-center mb-12">
+          <button className="btn-primary2" onClick={handleContinue}>
             Continue
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Socials
-
+export default Socials;
