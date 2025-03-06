@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import InvoiceHeader from "../../components/invoice/InvoiceHeader"
-import { Download, Share2, Trash2, Send } from "lucide-react"
+import { Download, Share2, Trash2, Send, Check, Edit2 } from "lucide-react"
 import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
 
@@ -12,37 +12,46 @@ function ViewInvoice() {
   const [invoice, setInvoice] = useState(null)
   const [showMenu, setShowMenu] = useState(false)
   const [showForwardModal, setShowForwardModal] = useState(false)
-  const [selectedChat, setSelectedChat] = useState(null)
+  const [selectedChats, setSelectedChats] = useState([])
+  const [chats, setChats] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
     // Load invoice from localStorage
     const invoices = JSON.parse(localStorage.getItem("invoices") || "[]")
-    console.log("invoices", invoices)
     const currentInvoice = invoices.find((inv) => inv.brandName === brandName)
     if (currentInvoice) {
       setInvoice(currentInvoice)
     }
+
+    // Load chats from localStorage
+    const storedChats = JSON.parse(localStorage.getItem("chats") || "[]")
+    setChats(
+      storedChats.length > 0
+        ? storedChats
+        : [
+            { id: 1, name: "MamaEarth" },
+            { id: 2, name: "Nykaa" },
+            { id: 3, name: "Adidas" },
+            { id: 4, name: "Nike" },
+          ],
+    )
   }, [brandName])
 
   const handleDownloadPDF = async () => {
-    const element = document.getElementById("invoice-content"); // Your invoice container
-    const pdf = new jsPDF("p", "mm", "a4"); // A4 size in portrait
-  
-    await pdf.html(element, {
-      callback: function (pdf) {
-        pdf.save(`invoice-${brandName}.pdf`);
-      },
-      x: 10, // Adjust margins
-      y: 10,
-      width: 190, // Fit to A4 width
-      windowWidth: element.scrollWidth, // Capture full width
-    });
-  
-    setShowMenu(false);
-  };
-  
-  
+    const element = document.getElementById("invoice-content")
+    const canvas = await html2canvas(element)
+    const data = canvas.toDataURL("image/png")
+
+    const pdf = new jsPDF()
+    const imgProperties = pdf.getImageProperties(data)
+    const pdfWidth = pdf.internal.pageSize.getWidth()
+    const pdfHeight = (imgProperties.height * pdfWidth) / imgProperties.width
+
+    pdf.addImage(data, "PNG", 0, 0, pdfWidth, pdfHeight)
+    pdf.save(`invoice-${brandName}.pdf`)
+    setShowMenu(false)
+  }
 
   const handleShare = async () => {
     try {
@@ -73,15 +82,58 @@ function ViewInvoice() {
     setShowMenu(false)
   }
 
+  const handleEdit = () => {
+    // Save current invoice as draft
+    localStorage.setItem("invoiceDraft", JSON.stringify(invoice))
+    navigate("/invoice/new-invoice")
+    setShowMenu(false)
+  }
+
   const handleForward = () => {
     setShowForwardModal(true)
     setShowMenu(false)
   }
 
-  const handleForwardToChat = () => {
-    // Implement forward to selected chat
-    console.log("Forwarding to chat:", selectedChat)
+  const toggleChatSelection = (chatId) => {
+    if (selectedChats.includes(chatId)) {
+      setSelectedChats(selectedChats.filter((id) => id !== chatId))
+    } else {
+      setSelectedChats([...selectedChats, chatId])
+    }
+  }
+
+  const handleForwardToChats = () => {
+    // Implement forward to selected chats
+    console.log(
+      "Forwarding to chats:",
+      selectedChats.map((id) => chats.find((chat) => chat.id === id).name),
+    )
+
+    // Update chat history in localStorage
+    const chatHistory = JSON.parse(localStorage.getItem("chatHistory") || "{}")
+
+    selectedChats.forEach((chatId) => {
+      const chat = chats.find((c) => c.id === chatId)
+      if (chat) {
+        if (!chatHistory[chat.name]) {
+          chatHistory[chat.name] = []
+        }
+
+        chatHistory[chat.name].push({
+          id: Date.now(),
+          type: "invoice",
+          content: `Invoice for ${invoice.brandName}`,
+          invoiceId: invoice.id,
+          timestamp: new Date().toISOString(),
+        })
+      }
+    })
+
+    localStorage.setItem("chatHistory", JSON.stringify(chatHistory))
     setShowForwardModal(false)
+
+    // Show success message
+    alert(`Invoice forwarded to ${selectedChats.length} chat(s)`)
   }
 
   if (!invoice) return <div>Loading...</div>
@@ -93,11 +145,24 @@ function ViewInvoice() {
 
   const calculateTax = () => {
     const subtotal = calculateSubtotal()
-    return (subtotal * (Number.parseFloat(invoice.amountDetails.taxRate) || 0)) / 100
+    return invoice.amountDetails.taxType === "No Tax"
+      ? 0
+      : (subtotal * (Number.parseFloat(invoice.amountDetails.taxRate) || 0)) / 100
   }
 
   const calculateTotal = () => {
     return calculateSubtotal() + calculateTax()
+  }
+
+  const calculateTotalReceived = () => {
+    return (invoice.amountDetails.receivedPayments || []).reduce(
+      (sum, payment) => sum + (Number.parseFloat(payment.amount) || 0),
+      0,
+    )
+  }
+
+  const calculateDueAmount = () => {
+    return calculateTotal() - calculateTotalReceived()
   }
 
   return (
@@ -110,56 +175,86 @@ function ViewInvoice() {
 
       {showMenu && (
         <div className="absolute right-4 top-16 bg-white rounded-lg shadow-lg z-50">
-          <button onClick={handleDownloadPDF} className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100">
-            <Download className="w-4 h-4" />
+          <button onClick={handleEdit} className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-100 text-left">
+            <Edit2 className="w-5 h-5" />
+            Edit Invoice
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-100 text-left"
+          >
+            <Download className="w-5 h-5" />
             Download as PDF
           </button>
-          <button onClick={handleShare} className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100">
-            <Share2 className="w-4 h-4" />
+          <button
+            onClick={handleShare}
+            className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-100 text-left"
+          >
+            <Share2 className="w-5 h-5" />
             Share
           </button>
           <button
-            onClick={handleDelete}
-            className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100 text-red-500"
+            onClick={handleForward}
+            className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-100 text-left"
           >
-            <Trash2 className="w-4 h-4" />
-            Delete Invoice
-          </button>
-          <button onClick={handleForward} className="flex items-center gap-2 w-full px-4 py-2 hover:bg-gray-100">
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5" />
             Forward to Chats
+          </button>
+          <button
+            onClick={handleDelete}
+            className="flex items-center gap-2 w-full px-4 py-3 hover:bg-gray-100 text-left text-red-500"
+          >
+            <Trash2 className="w-5 h-5" />
+            Delete Invoice
           </button>
         </div>
       )}
 
       {showForwardModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-80">
-            <h2 className="text-lg font-medium mb-4">Forward Invoice to:</h2>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {["MamaEarth", "Nykaa", "Adidas", "Nike"].map((chat) => (
-                <label key={chat} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded">
-                  <input
-                    type="radio"
-                    name="chat"
-                    value={chat}
-                    checked={selectedChat === chat}
-                    onChange={() => setSelectedChat(chat)}
-                    className="w-4 h-4"
-                  />
-                  {chat}
-                </label>
+          <div className="bg-white rounded-lg p-4 w-[90%] max-w-md max-h-[80vh] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium">Forward Invoice</h2>
+              <span className="text-sm text-gray-500">{selectedChats.length} selected</span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              {chats.map((chat) => (
+                <div
+                  key={chat.id}
+                  className="flex items-center gap-3 p-3 hover:bg-gray-100 rounded-md cursor-pointer"
+                  onClick={() => toggleChatSelection(chat.id)}
+                >
+                  <div className="w-10 h-10 bg-[#12766A20] rounded-full flex items-center justify-center text-[#12766A] font-medium">
+                    {chat.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">{chat.name}</h3>
+                  </div>
+                  <div
+                    className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                      selectedChats.includes(chat.id) ? "bg-[#12766A] border-[#12766A]" : "border-gray-300"
+                    }`}
+                  >
+                    {selectedChats.includes(chat.id) && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                </div>
               ))}
             </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowForwardModal(false)} className="px-4 py-2 border border-gray-300 rounded">
+
+            <div className="flex justify-end gap-2 mt-4 pt-3 border-t">
+              <button
+                onClick={() => setShowForwardModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-md"
+              >
                 Cancel
               </button>
               <button
-                onClick={handleForwardToChat}
-                className="px-4 py-2 bg-[#12766A] text-white rounded"
-                disabled={!selectedChat}
+                onClick={handleForwardToChats}
+                className="px-4 py-2 bg-[#12766A] text-white rounded-md flex items-center gap-2"
+                disabled={selectedChats.length === 0}
               >
+                <Send className="w-4 h-4" />
                 Send
               </button>
             </div>
@@ -167,132 +262,183 @@ function ViewInvoice() {
         </div>
       )}
 
-      <div id="invoice-content" className="p-4 bg-white">
-        <div className="mb-6">
-          <h2 className="text-xl font-medium">{invoice.brandName}</h2>
-          <p className="text-gray-500">{invoice.campaignName}</p>
+      <div id="invoice-content" className="p-4 bg-white m-4 rounded-lg shadow-sm">
+        {/* Professional Invoice Header */}
+        <div className="flex justify-between items-start mb-8 border-b pb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-[#12766A]">INVOICE</h1>
+            <p className="text-gray-600">{invoice.invoiceNumber.invoiceNumber || "INV-" + Date.now()}</p>
+          </div>
+          <div className="text-right">
+            <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center mb-2">
+              <span className="text-xl font-bold text-[#12766A]">LOGO</span>
+            </div>
+            <p className="font-medium">{invoice.companyDetails.companyName || "Your Company"}</p>
+            <p className="text-sm text-gray-600 whitespace-pre-line">
+              {invoice.companyDetails.address || "Company Address"}
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {/* Invoice Number */}
-          <div className="border-b pb-4">
-            <h3 className="font-medium mb-2">Invoice Number</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Invoice #</p>
-                <p>{invoice.invoiceNumber.invoiceNumber || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Invoice Date</p>
-                <p>{invoice.invoiceNumber.invoiceDate || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Due Date</p>
-                <p>{invoice.invoiceNumber.dueDate || "N/A"}</p>
-              </div>
+        {/* Bill To & Invoice Details */}
+        <div className="grid grid-cols-2 gap-8 mb-8">
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Bill To:</h2>
+            <p className="font-medium">{invoice.brandName}</p>
+            <p className="text-gray-600">{invoice.campaignName}</p>
+          </div>
+          <div className="text-right">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <p className="text-gray-600 text-left">Invoice Date:</p>
+              <p className="font-medium">{invoice.invoiceNumber.invoiceDate || new Date().toLocaleDateString()}</p>
+
+              <p className="text-gray-600 text-left">Due Date:</p>
+              <p className="font-medium">{invoice.invoiceNumber.dueDate || new Date().toLocaleDateString()}</p>
+
+              {invoice.companyDetails.gstin && (
+                <>
+                  <p className="text-gray-600 text-left">GSTIN:</p>
+                  <p className="font-medium">{invoice.companyDetails.gstin}</p>
+                </>
+              )}
+
+              {invoice.companyDetails.pan && (
+                <>
+                  <p className="text-gray-600 text-left">PAN:</p>
+                  <p className="font-medium">{invoice.companyDetails.pan}</p>
+                </>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Company Details */}
-          <div className="border-b pb-4">
-            <h3 className="font-medium mb-2">Company Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Company Name</p>
-                <p>{invoice.companyDetails.companyName || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Address</p>
-                <p>{invoice.companyDetails.address || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">GSTIN</p>
-                <p>{invoice.companyDetails.gstin || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">PAN</p>
-                <p>{invoice.companyDetails.pan || "N/A"}</p>
-              </div>
-            </div>
-          </div>
+        {/* Invoice Items */}
+        <div className="mb-8">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="py-3 px-4 text-left font-semibold border-b border-gray-200">Description</th>
+                <th className="py-3 px-4 text-right font-semibold border-b border-gray-200">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoice.amountDetails.particulars?.map((item, index) => (
+                <tr key={index} className="border-b border-gray-100">
+                  <td className="py-3 px-4">{item.description || "Item Description"}</td>
+                  <td className="py-3 px-4 text-right">₹{Number.parseFloat(item.amount).toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td className="py-3 px-4 text-right font-medium">Subtotal</td>
+                <td className="py-3 px-4 text-right">₹{calculateSubtotal().toFixed(2)}</td>
+              </tr>
+              {invoice.amountDetails.taxType !== "No Tax" && (
+                <tr>
+                  <td className="py-3 px-4 text-right font-medium">
+                    {invoice.amountDetails.taxType} ({invoice.amountDetails.taxRate}%)
+                  </td>
+                  <td className="py-3 px-4 text-right">₹{calculateTax().toFixed(2)}</td>
+                </tr>
+              )}
+              <tr className="bg-gray-50">
+                <td className="py-3 px-4 text-right font-bold">Total</td>
+                <td className="py-3 px-4 text-right font-bold">₹{calculateTotal().toFixed(2)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
 
-          {/* Amount Details */}
-          <div className="border-b pb-4">
-            <h3 className="font-medium mb-2">Amount Details</h3>
-            <table className="w-full">
+        {/* Payment Status */}
+        {(invoice.amountDetails.receivedPayments || []).length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-3">Payment Status</h2>
+            <table className="w-full border-collapse">
               <thead>
-                <tr className="text-left">
-                  <th className="pb-2">Particulars</th>
-                  <th className="pb-2 text-right">Amount</th>
+                <tr className="bg-gray-50">
+                  <th className="py-2 px-4 text-left font-medium border-b border-gray-200">Date</th>
+                  <th className="py-2 px-4 text-left font-medium border-b border-gray-200">Method</th>
+                  <th className="py-2 px-4 text-right font-medium border-b border-gray-200">Amount</th>
                 </tr>
               </thead>
               <tbody>
-                {invoice.amountDetails.particulars?.map((item, index) => (
-                  <tr key={index}>
-                    <td className="py-1">{item.description}</td>
-                    <td className="py-1 text-right">₹{Number.parseFloat(item.amount).toFixed(2)}</td>
+                {invoice.amountDetails.receivedPayments.map((payment, index) => (
+                  <tr key={index} className="border-b border-gray-100">
+                    <td className="py-2 px-4">{payment.date}</td>
+                    <td className="py-2 px-4">{payment.method}</td>
+                    <td className="py-2 px-4 text-right">₹{Number.parseFloat(payment.amount).toFixed(2)}</td>
                   </tr>
                 ))}
-                <tr className="border-t">
-                  <td className="py-1 font-medium">Subtotal</td>
-                  <td className="py-1 text-right">₹{calculateSubtotal().toFixed(2)}</td>
+                <tr className="bg-gray-50">
+                  <td colSpan="2" className="py-2 px-4 text-right font-medium">
+                    Total Received
+                  </td>
+                  <td className="py-2 px-4 text-right font-medium">₹{calculateTotalReceived().toFixed(2)}</td>
                 </tr>
-                {invoice.amountDetails.taxType !== "No Tax" && (
-                  <tr>
-                    <td className="py-1">Tax ({invoice.amountDetails.taxRate}%)</td>
-                    <td className="py-1 text-right">₹{calculateTax().toFixed(2)}</td>
-                  </tr>
-                )}
-                <tr className="font-bold">
-                  <td className="py-1">Grand Total</td>
-                  <td className="py-1 text-right">₹{calculateTotal().toFixed(2)}</td>
+                <tr className="bg-[#12766A10]">
+                  <td colSpan="2" className="py-2 px-4 text-right font-bold">
+                    Amount Due
+                  </td>
+                  <td className="py-2 px-4 text-right font-bold">₹{calculateDueAmount().toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
+        )}
 
-          {/* Notes */}
-          <div className="border-b pb-4">
-            <h3 className="font-medium mb-2">Notes</h3>
-            <p>{invoice.notes || "No notes added"}</p>
+        {/* Notes */}
+        {invoice.notes && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-2">Notes</h2>
+            <p className="p-3 bg-gray-50 rounded-md text-gray-600">{invoice.notes}</p>
           </div>
+        )}
 
-          {/* Digital Signature */}
-          <div className="border-b pb-4">
-            <h3 className="font-medium mb-2">Digital Signature</h3>
-            {invoice.signature ? (
-              <img src={invoice.signature || "/placeholder.svg"} alt="Signature" className="max-h-20" />
-            ) : (
-              <p>No signature added</p>
-            )}
-          </div>
+        {/* Payment Information */}
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-2">Payment Information</h2>
+          <div className="p-4 bg-gray-50 rounded-md">
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <p className="text-gray-600">Account Type:</p>
+              <p className="font-medium capitalize">{invoice.accountDetails.accountType || "N/A"}</p>
 
-          {/* Account Details */}
-          <div>
-            <h3 className="font-medium mb-2">Account Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Account Type</p>
-                <p>{invoice.accountDetails.accountType || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Beneficiary Name</p>
-                <p>{invoice.accountDetails.beneficiaryName || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Account Number</p>
-                <p>{invoice.accountDetails.accountNumber || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Bank Name</p>
-                <p>{invoice.accountDetails.bankName || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">IFSC Code</p>
-                <p>{invoice.accountDetails.ifscCode || "N/A"}</p>
-              </div>
+              <p className="text-gray-600">Beneficiary Name:</p>
+              <p className="font-medium">{invoice.accountDetails.beneficiaryName || "N/A"}</p>
+
+              <p className="text-gray-600">Bank Account:</p>
+              <p className="font-medium">{invoice.accountDetails.accountNumber || "N/A"}</p>
+
+              <p className="text-gray-600">Bank Name:</p>
+              <p className="font-medium">{invoice.accountDetails.bankName || "N/A"}</p>
+
+              <p className="text-gray-600">IFSC Code:</p>
+              <p className="font-medium">{invoice.accountDetails.ifscCode || "N/A"}</p>
             </div>
           </div>
+        </div>
+
+        {/* Signature */}
+        <div className="flex justify-end mt-8 pt-4 border-t">
+          {invoice.signature ? (
+            <div className="text-center">
+              <img src={invoice.signature || "/placeholder.svg"} alt="Digital Signature" className="max-h-16 mb-2" />
+              <p className="text-sm font-medium">Authorized Signature</p>
+            </div>
+          ) : (
+            <div className="text-center">
+              <div className="h-16 w-40 border border-dashed border-gray-300 mb-2 flex items-center justify-center text-gray-400 text-sm">
+                No Signature
+              </div>
+              <p className="text-sm font-medium">Authorized Signature</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 pt-4 border-t text-center text-sm text-gray-500">
+          <p>Thank you for your business!</p>
+          <p>This is a computer-generated invoice and does not require a physical signature.</p>
         </div>
       </div>
     </div>

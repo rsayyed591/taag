@@ -53,17 +53,17 @@ function Categories() {
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Continue Button */}
-        <div className="mt-auto flex justify-center mb-12">
-          <button
-            className="btn-primary2"
-            onClick={handleContinue}
-            disabled={selectedCategories.length === 0}
-          >
-            Continue
-          </button>
-        </div>
+      {/* Footer (Fixed at Bottom) */}
+      <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-50">
+        <button
+          className="btn-primary2 w-full max-w-xs"
+          onClick={handleContinue}
+          disabled={selectedCategories.length === 0}
+        >
+          Continue
+        </button>
       </div>
     </div>
   );

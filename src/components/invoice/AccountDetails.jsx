@@ -1,109 +1,135 @@
-import { useState } from "react";
-import { ChevronDown, ChevronUp, Edit2 } from "lucide-react";
+"use client"
 
-function AccountDetails({ data, onEdit, readOnly = true }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+import { useState, useEffect } from "react"
+import { ChevronDown, ChevronUp, Edit2 } from "lucide-react"
+
+function AccountDetails({ data, onEdit, isEditing = false }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [localData, setLocalData] = useState({
+    accountType: data.accountType || "savings",
+    beneficiaryName: data.beneficiaryName || "",
+    accountNumber: data.accountNumber || "",
+    bankName: data.bankName || "",
+    ifscCode: data.ifscCode || "",
+  })
+
+  useEffect(() => {
+    // Update local data when props change
+    setLocalData({
+      accountType: data.accountType || "savings",
+      beneficiaryName: data.beneficiaryName || "",
+      accountNumber: data.accountNumber || "",
+      bankName: data.bankName || "",
+      ifscCode: data.ifscCode || "",
+    })
+  }, [data])
+
+  const handleChange = (field, value) => {
+    setLocalData((prev) => {
+      const updated = {
+        ...prev,
+        [field]: value,
+      }
+
+      // Immediately update parent data
+      if (isEditing) {
+        data.onChange(field, value)
+      }
+
+      return updated
+    })
+  }
 
   return (
-    <div className="border-b border-gray-200">
-      <div
-        className="flex items-center justify-between p-4 cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
+    <div className="border border-gray-200 rounded-lg mb-4 bg-white shadow-sm">
+      <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex items-center gap-2">
           {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-          <span className="text-gray-600">Account Details</span>
+          <span className="text-gray-700 font-medium">Account Details</span>
         </div>
-        {readOnly && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-          >
-            <Edit2 className="w-5 h-5 text-[#12766A]" />
-          </button>
-        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onEdit()
+          }}
+          className="text-[#12766A] hover:bg-[#12766A10] p-2 rounded-full"
+        >
+          {isEditing ? "Save" : <Edit2 className="w-5 h-5" />}
+        </button>
       </div>
 
       {isExpanded && (
-        <div className="p-4 bg-gray-50">
+        <div className="p-4 border-t border-gray-200">
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-gray-500">Account Type</label>
-              <div className="flex gap-4 mt-2">
+              <label className="text-sm text-gray-500 block mb-1">Account Type</label>
+              <div className="flex gap-4 mt-1">
                 <button
-                  onClick={readOnly ? undefined : () => data.onChange("accountType", "savings")}
+                  onClick={isEditing ? () => handleChange("accountType", "savings") : undefined}
                   className={`px-4 py-2 rounded-full ${
-                    data.accountType === "savings" ? "bg-[#12766A] text-white" : "bg-gray-200"
+                    localData.accountType === "savings" ? "bg-[#12766A] text-white" : "bg-gray-200"
                   }`}
-                  disabled={readOnly}
+                  disabled={!isEditing}
                 >
                   Savings
                 </button>
                 <button
-                  onClick={readOnly ? undefined : () => data.onChange("accountType", "current")}
+                  onClick={isEditing ? () => handleChange("accountType", "current") : undefined}
                   className={`px-4 py-2 rounded-full ${
-                    data.accountType === "current" ? "bg-[#12766A] text-white" : "bg-gray-200"
+                    localData.accountType === "current" ? "bg-[#12766A] text-white" : "bg-gray-200"
                   }`}
-                  disabled={readOnly}
+                  disabled={!isEditing}
                 >
                   Current
                 </button>
               </div>
             </div>
             <div>
-              <label className="text-sm text-gray-500">Beneficiary Name</label>
+              <label className="text-sm text-gray-500 block mb-1">Beneficiary Name</label>
               <input
                 type="text"
-                value={data.beneficiaryName || ""}
-                onChange={readOnly ? undefined : (e) => data.onChange("beneficiaryName", e.target.value)}
-                readOnly={readOnly}
-                className="w-full p-2 mt-1 border border-gray-200 rounded-md"
+                value={localData.beneficiaryName}
+                onChange={(e) => handleChange("beneficiaryName", e.target.value)}
+                readOnly={!isEditing}
+                className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-500">Bank Account No.</label>
+              <label className="text-sm text-gray-500 block mb-1">Bank Account No.</label>
               <input
-                type="number"
-                value={data.accountNumber || ""}
-                onChange={
-                  readOnly
-                    ? undefined
-                    : (e) => {
-                        const value = e.target.value.replace(/\D/g, ""); // Remove non-numeric characters
-                        data.onChange("accountNumber", value);
-                      }
-                }
-                readOnly={readOnly}
-                className="w-full p-2 mt-1 border border-gray-200 rounded-md"
+                type="text"
+                value={localData.accountNumber}
+                onChange={(e) => handleChange("accountNumber", e.target.value)}
+                readOnly={!isEditing}
+                className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-500">Bank Name</label>
+              <label className="text-sm text-gray-500 block mb-1">Bank Name</label>
               <input
                 type="text"
-                value={data.bankName || ""}
-                onChange={readOnly ? undefined : (e) => data.onChange("bankName", e.target.value)}
-                readOnly={readOnly}
-                className="w-full p-2 mt-1 border border-gray-200 rounded-md"
+                value={localData.bankName}
+                onChange={(e) => handleChange("bankName", e.target.value)}
+                readOnly={!isEditing}
+                className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
               />
             </div>
             <div>
-              <label className="text-sm text-gray-500">IFSC Code</label>
+              <label className="text-sm text-gray-500 block mb-1">IFSC Code</label>
               <input
                 type="text"
-                value={data.ifscCode || ""}
-                onChange={readOnly ? undefined : (e) => data.onChange("ifscCode", e.target.value)}
-                readOnly={readOnly}
-                className="w-full p-2 mt-1 border border-gray-200 rounded-md"
+                value={localData.ifscCode}
+                onChange={(e) => handleChange("ifscCode", e.target.value)}
+                readOnly={!isEditing}
+                className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
               />
             </div>
           </div>
         </div>
       )}
     </div>
-  );
+  )
 }
 
-export default AccountDetails;
+export default AccountDetails
+

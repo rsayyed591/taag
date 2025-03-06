@@ -7,7 +7,6 @@ function UserType() {
 
   const handleContinue = () => {
     if (selectedType) {
-      // Store the selected user type in localStorage
       localStorage.setItem("userType", selectedType)
       navigate("/auth/socials")
     }
@@ -18,7 +17,9 @@ function UserType() {
       {/* Content */}
       <div className="content-container pt-6 md:pt-12">
         <h2 className="mb-2 header w-[251px] md:w-full">Select your preferred user type</h2>
-        <p className="sub-header2 font-medium text-[#979797] md:text-center mb-8 md:mt-8">Select the option defining your role</p>
+        <p className="sub-header2 font-medium text-[#979797] md:text-center mb-8 md:mt-8">
+          Select the option defining your role
+        </p>
 
         {/* User Type Options */}
         <div className="flex flex-wrap gap-x-2 gap-y-4 place-items-center md:justify-center md:align-center mb-8">
@@ -43,17 +44,16 @@ function UserType() {
             Creator
           </div>
         </div>
+      </div>
 
-        {/* Continue Button */}
-        <div className="mt-auto flex justify-center mb-12">
-          <button className="btn-primary2" onClick={handleContinue} disabled={!selectedType}>
-            Continue
-          </button>
-        </div>
+      {/* Footer (Fixed at Bottom) */}
+      <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-50">
+        <button className="btn-primary2 w-full max-w-xs" onClick={handleContinue} disabled={!selectedType}>
+          Continue
+        </button>
       </div>
     </div>
   )
 }
 
 export default UserType
-

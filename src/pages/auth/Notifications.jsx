@@ -55,11 +55,12 @@ function Notifications() {
         </div>
 
         {/* Continue Button (Fixed at Bottom) */}
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center">
-          <button className="btn-primary2 w-[90%] max-w-[400px]" onClick={handleContinue}>
-            Continue
-          </button>
-        </div>
+<div className="fixed bottom-6 left-0 right-0 flex justify-center z-50">
+  <button className="btn-primary2 w-[90%] max-w-[400px]" onClick={handleContinue}>
+    Continue
+  </button>
+</div>
+
       </IonContent>
     </IonPage>
   );

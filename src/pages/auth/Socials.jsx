@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
 
 function Socials() {
   const navigate = useNavigate();
@@ -17,7 +17,6 @@ function Socials() {
   };
 
   const handleContinue = () => {
-    // Store social media information in localStorage
     localStorage.setItem("socials", JSON.stringify(formData));
     navigate("/auth/categories");
   };
@@ -116,13 +115,13 @@ function Socials() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Continue Button */}
-        <div className="mt-auto flex justify-center mb-12">
-          <button className="btn-primary2" onClick={handleContinue}>
-            Continue
-          </button>
-        </div>
+      {/* Footer (Fixed at Bottom) */}
+      <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-50">
+        <button className="btn-primary2 w-full max-w-xs" onClick={handleContinue}>
+          Continue
+        </button>
       </div>
     </div>
   );

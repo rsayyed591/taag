@@ -12,7 +12,6 @@ function OtpVerification() {
 
   useEffect(() => {
     inputRefs.current = inputRefs.current.slice(0, 4);
-
     const storedPhoneNumber = localStorage.getItem("phoneNumber") || "";
     setPhoneNumber(storedPhoneNumber);
 
@@ -49,11 +48,9 @@ function OtpVerification() {
 
   const handleInputChange = (index, value) => {
     if (!/^\d*$/.test(value)) return;
-
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-
     if (value && index < 3 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
@@ -88,18 +85,16 @@ function OtpVerification() {
   return (
     <div className="page-container">
       <div className="content-container">
-        {/* Heading at the Top */}
+        {/* Heading */}
         <div className="pt-6 md:pt-12">
-          <h2 className="mb-2 header">
-            Please verify your Phone number
-          </h2>
+          <h2 className="mb-2 header">Please verify your Phone number</h2>
           <p className="sub-header2 font-medium text-[#979797] md:text-center md:mt-6">
             We've sent a one-time passcode to <span className="font-semibold text-[#12766A]">+91 {phoneNumber}</span>. Enter the code below.
           </p>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center mt-8 mb-16 md:my-12">
-          {/* OTP Input */}
+        {/* OTP Input */}
+        <div className="flex flex-col items-center justify-center my-8 md:my-12">
           <div className="w-full max-w-sm mb-6 md:max-w-md">
             <label className="sub-header mb-6 ml-8 block text-[#1D1D1F] md:text-sm md:ml-0">Verification code</label>
             <div className="flex gap-3 justify-center md:gap-4">
@@ -107,7 +102,7 @@ function OtpVerification() {
                 <input
                   key={index}
                   ref={(el) => (inputRefs.current[index] = el)}
-                  type="text"
+                  type="number"
                   maxLength={1}
                   value={digit}
                   onChange={(e) => handleInputChange(index, e.target.value)}
@@ -118,6 +113,7 @@ function OtpVerification() {
             </div>
           </div>
 
+          {/* Retry Timer */}
           <div className="text-center mb-6">
             <p className="sub-header2 font-medium text-[#979797]">
               Didn't receive a code?{" "}
@@ -130,14 +126,14 @@ function OtpVerification() {
               )}
             </p>
           </div>
-
-          {/* Continue Button */}
-          <div className="w-full max-w-sm md:max-w-md">
-            <button className="btn-primary2 w-full py-3" onClick={handleContinue} disabled={!otp.every((digit) => digit !== "")}>
-              Continue
-            </button>
-          </div>
         </div>
+      </div>
+
+      {/* Footer (Fixed Continue Button) */}
+      <div className="flex justify-center px-6 z-50">
+        <button className="btn-primary2 w-full max-w-xs py-3" onClick={handleContinue} disabled={!otp.every((digit) => digit !== "")}>
+          Continue
+        </button>
       </div>
     </div>
   );
