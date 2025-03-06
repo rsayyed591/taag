@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import InvoiceHeader from "../../components/invoice/InvoiceHeader"
-import { Download, Share2, Trash2, Send, Check, Edit2 } from "lucide-react"
+import { Download, Share2, Trash2, Send, Check, Edit2 } from 'lucide-react'
 import html2canvas from "html2canvas"
 import jsPDF from "jspdf"
 
@@ -38,20 +38,22 @@ function ViewInvoice() {
     )
   }, [brandName])
 
-  const handleDownloadPDF = async () => {
-    const element = document.getElementById("invoice-content")
-    const canvas = await html2canvas(element)
-    const data = canvas.toDataURL("image/png")
-
-    const pdf = new jsPDF()
-    const imgProperties = pdf.getImageProperties(data)
-    const pdfWidth = pdf.internal.pageSize.getWidth()
-    const pdfHeight = (imgProperties.height * pdfWidth) / imgProperties.width
-
-    pdf.addImage(data, "PNG", 0, 0, pdfWidth, pdfHeight)
-    pdf.save(`invoice-${brandName}.pdf`)
-    setShowMenu(false)
-  }
+  const handleDownloadPDF = () => {
+    const element = document.getElementById("invoice-content");
+    const pdf = new jsPDF("p", "pt", "a4");
+    
+    pdf.html(element, {
+      callback: function(pdf) {
+        pdf.save(`invoice-${brandName}.pdf`);
+      },
+      x: 15,
+      y: 15,
+      width: pdf.internal.pageSize.getWidth() - 30,
+      windowWidth: 1000
+    });
+    
+    setShowMenu(false);
+  };
 
   const handleShare = async () => {
     try {
@@ -262,16 +264,16 @@ function ViewInvoice() {
         </div>
       )}
 
-      <div id="invoice-content" className="p-4 bg-white m-4 rounded-lg shadow-sm">
+      <div id="invoice-content" className="p-4 bg-white m-4 rounded-lg shadow-sm max-w-4xl mx-auto overflow-x-auto">
         {/* Professional Invoice Header */}
-        <div className="flex justify-between items-start mb-8 border-b pb-4">
-          <div>
+        <div className="flex flex-row justify-between items-start mb-8 border-b pb-4">
+          <div className="mb-4 md:mb-0">
             <h1 className="text-2xl font-bold text-[#12766A]">INVOICE</h1>
             <p className="text-gray-600">{invoice.invoiceNumber.invoiceNumber || "INV-" + Date.now()}</p>
           </div>
-          <div className="text-right">
+          <div className="md:text-right">
             <div className="w-20 h-20 bg-gray-100 rounded-md flex items-center justify-center mb-2">
-              <span className="text-xl font-bold text-[#12766A]">LOGO</span>
+              <span className="text-xl font-bold text-[#12766A]">{invoice.companyDetails.companyName}</span>
             </div>
             <p className="font-medium">{invoice.companyDetails.companyName || "Your Company"}</p>
             <p className="text-sm text-gray-600 whitespace-pre-line">
@@ -281,13 +283,13 @@ function ViewInvoice() {
         </div>
 
         {/* Bill To & Invoice Details */}
-        <div className="grid grid-cols-2 gap-8 mb-8">
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-8 mb-8">
           <div>
             <h2 className="text-lg font-semibold mb-2">Bill To:</h2>
             <p className="font-medium">{invoice.brandName}</p>
             <p className="text-gray-600">{invoice.campaignName}</p>
           </div>
-          <div className="text-right">
+          <div className="md:text-right">
             <div className="grid grid-cols-2 gap-2 text-sm">
               <p className="text-gray-600 text-left">Invoice Date:</p>
               <p className="font-medium">{invoice.invoiceNumber.invoiceDate || new Date().toLocaleDateString()}</p>
@@ -314,7 +316,7 @@ function ViewInvoice() {
 
         {/* Invoice Items */}
         <div className="mb-8">
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse min-w-full overflow-x-auto">
             <thead>
               <tr className="bg-gray-50">
                 <th className="py-3 px-4 text-left font-semibold border-b border-gray-200">Description</th>
@@ -354,7 +356,7 @@ function ViewInvoice() {
         {(invoice.amountDetails.receivedPayments || []).length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-3">Payment Status</h2>
-            <table className="w-full border-collapse">
+            <table className="w-full border-collapse min-w-full overflow-x-auto">
               <thead>
                 <tr className="bg-gray-50">
                   <th className="py-2 px-4 text-left font-medium border-b border-gray-200">Date</th>
@@ -399,7 +401,7 @@ function ViewInvoice() {
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-2">Payment Information</h2>
           <div className="p-4 bg-gray-50 rounded-md">
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               <p className="text-gray-600">Account Type:</p>
               <p className="font-medium capitalize">{invoice.accountDetails.accountType || "N/A"}</p>
 
@@ -446,4 +448,3 @@ function ViewInvoice() {
 }
 
 export default ViewInvoice
-
