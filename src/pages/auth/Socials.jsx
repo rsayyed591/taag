@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 function Socials() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    emailId: "",
     instagramId: "",
     youtubeId: "",
     instagramReelCost: "",
@@ -17,7 +18,11 @@ function Socials() {
   };
 
   const handleContinue = () => {
-    localStorage.setItem("socials", JSON.stringify(formData));
+    const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {}; // Get userData
+    existingUserData.socials = formData; // Update creatorDetails
+  
+    localStorage.setItem("currentUser", JSON.stringify(existingUserData));
+
     navigate("/auth/categories");
   };
 
@@ -34,6 +39,26 @@ function Socials() {
 
         {/* Social Media Form */}
         <div className="space-y-6 mt-8">
+          {/* Email ID */}
+          <div className="relative">
+            <label className="sub-header text-[#12766A]">Email ID</label>
+            <div className="phone-container">
+              <input
+                type="text"
+                name="emailId"
+                value={formData.emailId}
+                onChange={handleChange}
+                className="input-field"
+                placeholder="username@gmail.com"
+              />
+              {formData.instagramId && (
+                <button className="clear-btn" onClick={() => clearField("emailId")}>
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Instagram ID */}
           <div className="relative">
             <label className="sub-header text-[#12766A]">Instagram ID</label>

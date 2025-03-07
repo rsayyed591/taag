@@ -7,7 +7,8 @@ function Success() {
 
   useEffect(() => {
     // Get user type from localStorage
-    const storedUserType = localStorage.getItem("userType") || "user";
+    const userProfile = JSON.parse(localStorage.getItem("userProfiles")) || {}; // Get userData
+    const storedUserType = userProfile.userType || "User";
     setUserType(storedUserType.toLowerCase());
   }, []);
 

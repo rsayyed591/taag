@@ -7,7 +7,10 @@ function UserType() {
 
   const handleContinue = () => {
     if (selectedType) {
-      localStorage.setItem("userType", selectedType)
+      const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {}; // Get userData
+      existingUserData.userType = selectedType;
+  
+      localStorage.setItem("currentUser", JSON.stringify(existingUserData));
       navigate("/auth/socials")
     }
   }

@@ -12,7 +12,49 @@ function PhoneVerification() {
 
   const handleContinue = () => {
     if (phoneNumber.length >= 10) {
-      localStorage.setItem("phoneNumber", phoneNumber);
+        const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {}; // Get userData
+        const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []; // Get existing profiles
+        const newid = Math.floor(Math.random() * 1000000);
+        // Create new profile with isActive: true
+        const newProfile = {
+            id: newid,
+            name: "Anonymous",
+            username: existingUserData.socials?.instagramId || "@anonymous",
+            avatar: "/icons/profile.svg",
+            coverImage: "/profile-bg.svg",
+            isActive: true, // Newly added profile is active
+            userType: existingUserData.userType || "creator",
+            phoneNumber: existingUserData.phoneNumber || phoneNumber,
+            creatorDetails: {
+                name: "Anonymous",
+                emailId: existingUserData.socials?.emailId || "@anonymous",
+                instagram: { 
+                    url: existingUserData.socials?.instagramId || "@anonymous", 
+                    reelCost: existingUserData.socials?.instagramReelCost || 0 
+                },
+                youtube: { 
+                    url: existingUserData.socials?.youtubeId || "@anonymous", 
+                    videoCost: existingUserData.socials?.youtubeVideoCost || 0 
+                },
+                category : existingUserData.categories || [],
+            }
+        };
+
+        // Mark all existing profiles as inactive
+        const updatedProfiles = storedProfiles.map(profile => ({
+            ...profile,
+            isActive: false
+        }));
+
+        // Add the new profile to the list
+        updatedProfiles.push(newProfile);
+        localStorage.setItem("activeProfileId",newid);
+
+        // Save updated profiles to localStorage
+        localStorage.setItem("userProfiles", JSON.stringify(updatedProfiles));
+
+        // Remove currentUser from localStorage
+        localStorage.removeItem("currentUser");
       navigate("/auth/otp-verification");
     }
   };

@@ -30,7 +30,10 @@ function Categories() {
 
   const handleContinue = () => {
     // Store selected categories in localStorage
-    localStorage.setItem("categories", JSON.stringify(selectedCategories));
+    const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {}; // Get userData
+    existingUserData.categories = selectedCategories; // Update creatorDetails
+  
+    localStorage.setItem("currentUser", JSON.stringify(existingUserData));
     navigate("/auth/notifications");
   };
 

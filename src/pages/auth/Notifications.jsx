@@ -12,16 +12,26 @@ function Notifications() {
   const [showAlert, setShowAlert] = useState(true);
 
   const handleContinue = () => {
+    const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {};
+    existingUserData.notifications = "denied";
+  
+    localStorage.setItem("currentUser", JSON.stringify(existingUserData));
     navigate("/auth/phone-verification");
   };
 
   const handleAllow = () => {
-    localStorage.setItem("notifications", "allowed");
+    const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {};
+    existingUserData.notifications = "allowed";
+  
+    localStorage.setItem("currentUser", JSON.stringify(existingUserData));
     navigate("/auth/phone-verification");
   };
 
   const handleDontAllow = () => {
-    localStorage.setItem("notifications", "denied");
+    const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {};
+    existingUserData.notifications = "denied";
+  
+    localStorage.setItem("currentUser", JSON.stringify(existingUserData));
     setShowAlert(false);
   };
 
