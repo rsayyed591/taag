@@ -34,19 +34,19 @@ function FAQs() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F2F1F1]">
       {/* Header */}
-      <div className="flex items-center gap-2 p-4 bg-white">
-        <button onClick={() => navigate("/profile")} className="p-2">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-medium">FAQs</h1>
+      <div className="flex items-center gap-2 p-4 bg-[#F2F1F1]">
+  <button onClick={() => navigate("/profile")} className="inline-flex items-center p-2">
+    <ArrowLeft className="w-5 h-5" />
+  </button>
+  <h1 className="text-lg font-medium m-0">FAQs</h1>
       </div>
 
-      <div className="p-4">
+      <div className="px-4">
         <div className="space-y-4">
           {faqs.map((faq, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div key={index} className="bg-[#F2F1F1] border-[#D7D4D4] border-b overflow-hidden">
               <button
                 className="w-full flex items-center justify-between p-4 text-left"
                 onClick={() => setExpandedIndex(expandedIndex === index ? null : index)}

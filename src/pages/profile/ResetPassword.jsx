@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
@@ -56,10 +54,10 @@ function ResetPassword() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="flex items-center gap-2 p-4 bg-white">
-        <button onClick={() => navigate("/profile")} className="p-2">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h1 className="text-lg font-medium">Reset Password</h1>
+  <button onClick={() => navigate("/profile")} className="inline-flex items-center p-2">
+    <ArrowLeft className="w-5 h-5" />
+  </button>
+  <h1 className="text-lg font-medium m-0">Reset Password</h1>
       </div>
 
       <div className="p-4">
