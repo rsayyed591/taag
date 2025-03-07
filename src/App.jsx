@@ -19,6 +19,7 @@ import Managers from "./pages/profile/Managers";
 import ResetPassword from "./pages/profile/ResetPassword";
 import FAQs from "./pages/profile/FAQs";
 import Compaign from "./pages/compaign/Compaign";
+import ChatScreen from "./pages/home/ChatScreen"
 
 function App() {
   return (
@@ -46,7 +47,7 @@ function App() {
         <Route path="/profile/managers" element={<Managers />} />
         <Route path="/profile/reset-password" element={<ResetPassword />} />
         <Route path="/profile/faqs" element={<FAQs />} />
-      </Routes>
+        <Route path="/chat/:chatName" element={<ChatScreen />} />      </Routes>
     </Router>
   );
 }
