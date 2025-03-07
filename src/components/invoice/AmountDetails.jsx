@@ -56,7 +56,7 @@ function AmountDetails({ data, onEdit, isEditing = false }) {
 
   const handleAddPayment = () => {
     const newPayment = {
-      id: Date.now(),
+      id: Math.floor(Math.random() * 1000000),
       amount: 0,
       date: new Date().toISOString().split("T")[0],
       method: "Bank Transfer",
