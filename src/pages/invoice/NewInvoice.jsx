@@ -2,509 +2,588 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import InvoiceHeader from "../../components/invoice/InvoiceHeader"
+import { ArrowLeft } from "lucide-react"
+import { IonAlert } from "@ionic/react"
+import DigitalSignature from "../../components/invoice/DigitalSignature"
 
 function NewInvoice() {
   const navigate = useNavigate()
+  const activeProfileId = localStorage.getItem("activeProfileId")
   const [invoiceData, setInvoiceData] = useState({
+    id: null, // Add id field to track if we're editing an existing invoice
+    profileId: activeProfileId,
     brandName: "",
     campaignName: "",
-    invoiceNumber: {
-      invoiceNumber: "",
-      invoiceDate: new Date().toISOString().split("T")[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-    },
-    companyDetails: {
-      companyName: "",
-      address: "",
-      gstin: "",
-      pan: "",
-    },
-    amountDetails: {
-      particulars: [{ description: "", amount: 0 }],
-      taxType: "CGST/SGST",
-      taxRate: 5,
-      receivedPayments: [],
-    },
+    invoiceNumber: "",
+    invoiceDate: new Date().toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    companyName: "",
+    address: "",
+    gstin: "",
+    pan: "",
+    particulars: [{ description: "", amount: 0 }],
+    taxType: "CGST/SGST",
+    taxRate: 5,
+    receivedPayments: [],
     notes: "",
     signature: null,
-    accountDetails: {
-      accountType: "savings",
-      beneficiaryName: "",
-      accountNumber: "",
-      bankName: "",
-      ifscCode: "",
-    },
+    accountType: "savings",
+    beneficiaryName: "",
+    accountNumber: "",
+    bankName: "",
+    ifscCode: "",
   })
+  const [isEditing, setIsEditing] = useState(false)
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
 
   useEffect(() => {
     // Check if we're editing an existing invoice
     const draft = localStorage.getItem("invoiceDraft")
+    const editingInvoiceId = localStorage.getItem("editingInvoiceId")
 
     if (draft) {
-      setInvoiceData(JSON.parse(draft))
+      const parsedDraft = JSON.parse(draft)
+
+      // Flatten the structure for easier form handling
+      setInvoiceData({
+        id: editingInvoiceId ? Number.parseInt(editingInvoiceId) : null,
+        profileId: activeProfileId,
+        brandName: parsedDraft.brandName || "",
+        campaignName: parsedDraft.campaignName || "",
+        invoiceNumber: parsedDraft.invoiceNumber?.invoiceNumber || "",
+        invoiceDate: parsedDraft.invoiceNumber?.invoiceDate || new Date().toISOString().split("T")[0],
+        dueDate:
+          parsedDraft.invoiceNumber?.dueDate ||
+          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        companyName: parsedDraft.companyDetails?.companyName || "",
+        address: parsedDraft.companyDetails?.address || "",
+        gstin: parsedDraft.companyDetails?.gstin || "",
+        pan: parsedDraft.companyDetails?.pan || "",
+        particulars: parsedDraft.amountDetails?.particulars || [{ description: "", amount: 0 }],
+        taxType: parsedDraft.amountDetails?.taxType || "CGST/SGST",
+        taxRate: parsedDraft.amountDetails?.taxRate || 5,
+        receivedPayments: parsedDraft.amountDetails?.receivedPayments || [],
+        notes: parsedDraft.notes || "",
+        signature: parsedDraft.signature || null,
+        accountType: parsedDraft.accountDetails?.accountType || "savings",
+        beneficiaryName: parsedDraft.accountDetails?.beneficiaryName || "",
+        accountNumber: parsedDraft.accountDetails?.accountNumber || "",
+        bankName: parsedDraft.accountDetails?.bankName || "",
+        ifscCode: parsedDraft.accountDetails?.ifscCode || "",
+      })
+
+      // Set editing mode if we have an invoice ID
+      if (editingInvoiceId) {
+        setIsEditing(true)
+      }
     } else {
       // Load bank details from profile if available
-      const bankDetails = localStorage.getItem("bankDetails")
-      if (bankDetails) {
-        const parsedBankDetails = JSON.parse(bankDetails)
-        setInvoiceData((prev) => ({
-          ...prev,
-          accountDetails: {
-            accountType: parsedBankDetails.accountType || "savings",
-            beneficiaryName: parsedBankDetails.beneficiaryName || "",
-            accountNumber: parsedBankDetails.accountNumber || "",
-            bankName: parsedBankDetails.bankName || "",
-            ifscCode: parsedBankDetails.ifscCode || "",
-          },
-          signature: parsedBankDetails.signature || null,
-        }))
+      const userProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []
+      const activeProfileId = localStorage.getItem("activeProfileId")
+
+      if (activeProfileId) {
+        const activeProfile = userProfiles.find((profile) => String(profile.id) === String(activeProfileId))
+        if (activeProfile?.bankDetails) {
+          setInvoiceData((prev) => ({
+            ...prev,
+            accountType: activeProfile.bankDetails.accountType || "savings",
+            beneficiaryName: activeProfile.bankDetails.beneficiaryName || "",
+            accountNumber: activeProfile.bankDetails.accountNumber || "",
+            bankName: activeProfile.bankDetails.bankName || "",
+            ifscCode: activeProfile.bankDetails.ifscCode || "",
+            signature: activeProfile.bankDetails.signature || null,
+          }))
+        }
       }
     }
   }, [])
 
+  const handleChange = (field, value) => {
+    setInvoiceData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const handleParticularChange = (index, field, value) => {
+    const newParticulars = [...invoiceData.particulars]
+    newParticulars[index] = { ...newParticulars[index], [field]: value }
+    handleChange("particulars", newParticulars)
+  }
+
+  const handleAddParticular = () => {
+    handleChange("particulars", [...invoiceData.particulars, { description: "", amount: 0 }])
+  }
+
+  const handleRemoveParticular = (index) => {
+    const newParticulars = [...invoiceData.particulars]
+    newParticulars.splice(index, 1)
+    handleChange("particulars", newParticulars)
+  }
+
+  const calculateSubtotal = () => {
+    return invoiceData.particulars.reduce((sum, item) => sum + (Number.parseFloat(item.amount) || 0), 0)
+  }
+
+  const calculateTax = () => {
+    return invoiceData.taxType === "No Tax"
+      ? 0
+      : (calculateSubtotal() * (Number.parseFloat(invoiceData.taxRate) || 0)) / 100
+  }
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateTax()
+  }
+
   const handleSave = () => {
-    // Calculate total amount
-    const subtotal = invoiceData.amountDetails.particulars.reduce(
-      (sum, item) => sum + (Number.parseFloat(item.amount) || 0),
-      0,
-    )
-    const taxAmount =
-      invoiceData.amountDetails.taxType === "No Tax"
-        ? 0
-        : (subtotal * (Number.parseFloat(invoiceData.amountDetails.taxRate) || 0)) / 100
-    const totalAmount = subtotal + taxAmount
+    // Validate required fields
+    if (!invoiceData.brandName.trim()) {
+      setAlertMessage("Please enter a brand name")
+      setShowAlert(true)
+      return
+    }
 
-    // Calculate received amount
-    const receivedAmount = (invoiceData.amountDetails.receivedPayments || []).reduce(
-      (sum, payment) => sum + (Number.parseFloat(payment.amount) || 0),
-      0,
-    )
-
-    // Save to localStorage
-    const invoices = JSON.parse(localStorage.getItem("invoices") || "[]")
-    const newInvoice = {
-      id: Date.now(),
-      ...invoiceData,
-      amount: totalAmount,
-      receivedAmount: receivedAmount,
-      dueAmount: totalAmount - receivedAmount,
+    // Restructure data for storage
+    const formattedInvoice = {
+      id: invoiceData.id || Math.floor(Math.random() * 1000000),
+      brandName: invoiceData.brandName,
+      campaignName: invoiceData.campaignName,
+      invoiceNumber: {
+        invoiceNumber: invoiceData.invoiceNumber,
+        invoiceDate: invoiceData.invoiceDate,
+        dueDate: invoiceData.dueDate,
+      },
+      companyDetails: {
+        companyName: invoiceData.companyName,
+        address: invoiceData.address,
+        gstin: invoiceData.gstin,
+        pan: invoiceData.pan,
+      },
+      amountDetails: {
+        particulars: invoiceData.particulars,
+        taxType: invoiceData.taxType,
+        taxRate: invoiceData.taxRate,
+        receivedPayments: invoiceData.receivedPayments,
+      },
+      notes: invoiceData.notes,
+      signature: invoiceData.signature,
+      accountDetails: {
+        accountType: invoiceData.accountType,
+        beneficiaryName: invoiceData.beneficiaryName,
+        accountNumber: invoiceData.accountNumber,
+        bankName: invoiceData.bankName,
+        ifscCode: invoiceData.ifscCode,
+      },
+      amount: calculateTotal(),
+      receivedAmount: (invoiceData.receivedPayments || []).reduce(
+        (sum, payment) => sum + (Number.parseFloat(payment.amount) || 0),
+        0,
+      ),
       date: new Date().toLocaleDateString(),
     }
-    invoices.push(newInvoice)
-    localStorage.setItem("invoices", JSON.stringify(invoices))
 
-    // Clear draft
+    formattedInvoice.dueAmount = formattedInvoice.amount - formattedInvoice.receivedAmount
+
+    // Get existing invoices
+    const invoices = JSON.parse(localStorage.getItem("invoices") || "[]")
+
+    if (isEditing) {
+      // Update existing invoice
+      const updatedInvoices = invoices.map((invoice) => (invoice.id === invoiceData.id ? formattedInvoice : invoice))
+      localStorage.setItem("invoices", JSON.stringify(updatedInvoices))
+
+      setAlertMessage("Invoice updated successfully")
+    } else {
+      // Add new invoice
+      invoices.push(formattedInvoice)
+      localStorage.setItem("invoices", JSON.stringify(invoices))
+
+      setAlertMessage("Invoice created successfully")
+    }
+
+    // Show success alert
+    setShowAlert(true)
+
+    // Clear draft and editing ID
     localStorage.removeItem("invoiceDraft")
+    localStorage.removeItem("editingInvoiceId")
+  }
 
+  const handleAlertDismiss = () => {
     // Navigate to the invoice view
     navigate(`/invoice/${invoiceData.brandName}`)
   }
 
-  const handleChange = (section, field, value) => {
-    if (section === "main") {
-      setInvoiceData((prev) => ({
-        ...prev,
-        [field]: value,
-      }))
-    } else {
-      setInvoiceData((prev) => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: value,
-        },
-      }))
-    }
-
-    // Save draft to localStorage
-    localStorage.setItem("invoiceDraft", JSON.stringify(invoiceData))
-  }
-
-  const addParticular = () => {
-    setInvoiceData((prev) => ({
-      ...prev,
-      amountDetails: {
-        ...prev.amountDetails,
-        particulars: [...prev.amountDetails.particulars, { description: "", amount: 0 }],
-      },
-    }))
-  }
-
-  const removeParticular = (index) => {
-    setInvoiceData((prev) => ({
-      ...prev,
-      amountDetails: {
-        ...prev.amountDetails,
-        particulars: prev.amountDetails.particulars.filter((_, i) => i !== index),
-      },
-    }))
-  }
-
-  const updateParticular = (index, field, value) => {
-    setInvoiceData((prev) => {
-      const updatedParticulars = [...prev.amountDetails.particulars]
-      updatedParticulars[index] = {
-        ...updatedParticulars[index],
-        [field]: value,
-      }
-      return {
-        ...prev,
-        amountDetails: {
-          ...prev.amountDetails,
-          particulars: updatedParticulars,
-        },
-      }
-    })
-  }
-
-  const addPayment = () => {
-    setInvoiceData((prev) => ({
-      ...prev,
-      amountDetails: {
-        ...prev.amountDetails,
-        receivedPayments: [
-          ...(prev.amountDetails.receivedPayments || []),
-          { date: new Date().toISOString().split("T")[0], method: "Bank Transfer", amount: 0 },
-        ],
-      },
-    }))
-  }
-
-  const removePayment = (index) => {
-    setInvoiceData((prev) => ({
-      ...prev,
-      amountDetails: {
-        ...prev.amountDetails,
-        receivedPayments: prev.amountDetails.receivedPayments.filter((_, i) => i !== index),
-      },
-    }))
-  }
-
-  const updatePayment = (index, field, value) => {
-    setInvoiceData((prev) => {
-      const updatedPayments = [...(prev.amountDetails.receivedPayments || [])]
-      updatedPayments[index] = {
-        ...updatedPayments[index],
-        [field]: value,
-      }
-      return {
-        ...prev,
-        amountDetails: {
-          ...prev.amountDetails,
-          receivedPayments: updatedPayments,
-        },
-      }
-    })
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <InvoiceHeader title="New Invoice" />
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header */}
+      <div className="flex items-center gap-2 p-4 bg-white shadow-sm">
+        <button onClick={() => navigate("/invoice")} className="p-2">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-lg font-medium">{isEditing ? "Edit Invoice" : "New Invoice"}</h1>
+      </div>
 
-      <div className="p-4 max-w-3xl mx-auto">
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
+      <div className="p-4 max-w-2xl mx-auto">
+        <form className="space-y-6">
+          {/* Basic Info */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-medium mb-4">Basic Information</h2>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Brand Name</label>
-            <input
-              type="text"
-              placeholder="Enter brand name"
-              value={invoiceData.brandName}
-              onChange={(e) => handleChange("main", "brandName", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Name</label>
-            <input
-              type="text"
-              placeholder="Enter campaign name"
-              value={invoiceData.campaignName}
-              onChange={(e) => handleChange("main", "campaignName", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-4">Invoice Details</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
-            <input
-              type="text"
-              placeholder="INV-001"
-              value={invoiceData.invoiceNumber.invoiceNumber}
-              onChange={(e) => handleChange("invoiceNumber", "invoiceNumber", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date</label>
-              <input
-                type="date"
-                value={invoiceData.invoiceNumber.invoiceDate}
-                onChange={(e) => handleChange("invoiceNumber", "invoiceDate", e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
-              <input
-                type="date"
-                value={invoiceData.invoiceNumber.dueDate}
-                onChange={(e) => handleChange("invoiceNumber", "dueDate", e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-4">Company Details</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-            <input
-              type="text"
-              placeholder="Your Company Name"
-              value={invoiceData.companyDetails.companyName}
-              onChange={(e) => handleChange("companyDetails", "companyName", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-            <textarea
-              placeholder="Company Address"
-              value={invoiceData.companyDetails.address}
-              onChange={(e) => handleChange("companyDetails", "address", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-              rows="3"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">GSTIN</label>
-              <input
-                type="text"
-                placeholder="GSTIN Number"
-                value={invoiceData.companyDetails.gstin}
-                onChange={(e) => handleChange("companyDetails", "gstin", e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">PAN</label>
-              <input
-                type="text"
-                placeholder="PAN Number"
-                value={invoiceData.companyDetails.pan}
-                onChange={(e) => handleChange("companyDetails", "pan", e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-4">Amount Details</h2>
-
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">Particulars</label>
-              <button type="button" onClick={addParticular} className="text-sm text-[#12766A] font-medium">
-                + Add Item
-              </button>
-            </div>
-
-            {invoiceData.amountDetails.particulars.map((item, index) => (
-              <div key={index} className="flex flex-col md:flex-row gap-2 mb-2 p-3 bg-gray-50 rounded-md">
-                <div className="flex-grow">
-                  <input
-                    type="text"
-                    placeholder="Description"
-                    value={item.description}
-                    onChange={(e) => updateParticular(index, "description", e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-                  />
-                </div>
-                <div className="w-full md:w-32">
-                  <input
-                    type="number"
-                    placeholder="Amount"
-                    value={item.amount}
-                    onChange={(e) => updateParticular(index, "amount", e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-                  />
-                </div>
-                {invoiceData.amountDetails.particulars.length > 1 && (
-                  <button type="button" onClick={() => removeParticular(index)} className="text-red-500 p-2">
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tax Type</label>
-              <select
-                value={invoiceData.amountDetails.taxType}
-                onChange={(e) => handleChange("amountDetails", "taxType", e.target.value)}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-              >
-                <option value="No Tax">No Tax</option>
-                <option value="GST">GST</option>
-                <option value="CGST/SGST">CGST/SGST</option>
-                <option value="IGST">IGST</option>
-              </select>
-            </div>
-
-            {invoiceData.amountDetails.taxType !== "No Tax" && (
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Brand Name*</label>
                 <input
-                  type="number"
-                  placeholder="Tax Rate"
-                  value={invoiceData.amountDetails.taxRate}
-                  onChange={(e) => handleChange("amountDetails", "taxRate", e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
+                  type="text"
+                  value={invoiceData.brandName}
+                  onChange={(e) => handleChange("brandName", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Enter brand name"
+                  required
                 />
               </div>
-            )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Campaign Name</label>
+                <input
+                  type="text"
+                  value={invoiceData.campaignName}
+                  onChange={(e) => handleChange("campaignName", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Enter campaign name"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-sm font-medium text-gray-700">Received Payments</label>
-              <button type="button" onClick={addPayment} className="text-sm text-[#12766A] font-medium">
-                + Add Payment
-              </button>
-            </div>
+          {/* Invoice Details */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-medium mb-4">Invoice Details</h2>
 
-            {(invoiceData.amountDetails.receivedPayments || []).map((payment, index) => (
-              <div key={index} className="flex flex-col md:flex-row gap-2 mb-2 p-3 bg-gray-50 rounded-md">
-                <div className="w-full md:w-1/3">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Number</label>
+                <input
+                  type="text"
+                  value={invoiceData.invoiceNumber}
+                  onChange={(e) => handleChange("invoiceNumber", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="INV-001"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Date</label>
                   <input
                     type="date"
-                    value={payment.date}
-                    onChange={(e) => updatePayment(index, "date", e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
+                    value={invoiceData.invoiceDate}
+                    onChange={(e) => handleChange("invoiceDate", e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
                   />
                 </div>
-                <div className="w-full md:w-1/3">
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={invoiceData.dueDate}
+                    onChange={(e) => handleChange("dueDate", e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Company Details */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-medium mb-4">Company Details</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                <input
+                  type="text"
+                  value={invoiceData.companyName}
+                  onChange={(e) => handleChange("companyName", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Your company name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <textarea
+                  value={invoiceData.address}
+                  onChange={(e) => handleChange("address", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows="3"
+                  placeholder="Company address"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">GSTIN</label>
                   <input
                     type="text"
-                    placeholder="Payment Method"
-                    value={payment.method}
-                    onChange={(e) => updatePayment(index, "method", e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
+                    value={invoiceData.gstin}
+                    onChange={(e) => handleChange("gstin", e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="GSTIN number"
                   />
                 </div>
-                <div className="w-full md:w-1/3">
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">PAN</label>
                   <input
-                    type="number"
-                    placeholder="Amount"
-                    value={payment.amount}
-                    onChange={(e) => updatePayment(index, "amount", e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
+                    type="text"
+                    value={invoiceData.pan}
+                    onChange={(e) => handleChange("pan", e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    placeholder="PAN number"
                   />
                 </div>
-                <button type="button" onClick={() => removePayment(index)} className="text-red-500 p-2">
-                  Remove
+              </div>
+            </div>
+          </div>
+
+          {/* Amount Details */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-medium mb-4">Amount Details</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Particulars</label>
+
+                {invoiceData.particulars.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 mb-2">
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        placeholder="Description"
+                        value={item.description}
+                        onChange={(e) => handleParticularChange(index, "description", e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+
+                    <div className="w-1/3">
+                      <input
+                        type="number"
+                        placeholder="Amount"
+                        value={item.amount}
+                        onChange={(e) => handleParticularChange(index, "amount", e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveParticular(index)}
+                      className="text-red-500 p-1"
+                      disabled={invoiceData.particulars.length <= 1}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+
+                <button type="button" onClick={handleAddParticular} className="mt-2 text-[#12766A] text-sm font-medium">
+                  + Add Item
                 </button>
               </div>
-            ))}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tax Settings</label>
+
+                <div className="flex flex-wrap gap-4 mb-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="taxType"
+                      checked={invoiceData.taxType === "CGST/SGST"}
+                      onChange={() => handleChange("taxType", "CGST/SGST")}
+                      className="w-4 h-4 text-[#12766A]"
+                    />
+                    CGST/SGST
+                  </label>
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="taxType"
+                      checked={invoiceData.taxType === "IGST"}
+                      onChange={() => handleChange("taxType", "IGST")}
+                      className="w-4 h-4 text-[#12766A]"
+                    />
+                    IGST
+                  </label>
+
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="taxType"
+                      checked={invoiceData.taxType === "No Tax"}
+                      onChange={() => handleChange("taxType", "No Tax")}
+                      className="w-4 h-4 text-[#12766A]"
+                    />
+                    No Tax
+                  </label>
+                </div>
+
+                {invoiceData.taxType !== "No Tax" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tax Rate (%)</label>
+                    <input
+                      type="number"
+                      value={invoiceData.taxRate}
+                      onChange={(e) => handleChange("taxRate", e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-gray-50 p-3 rounded-md">
+                <div className="flex justify-between mb-1">
+                  <span>Subtotal</span>
+                  <span>₹{calculateSubtotal().toFixed(2)}</span>
+                </div>
+
+                {invoiceData.taxType !== "No Tax" && (
+                  <div className="flex justify-between mb-1">
+                    <span>Tax ({invoiceData.taxRate}%)</span>
+                    <span>₹{calculateTax().toFixed(2)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between font-medium border-t border-gray-300 pt-1 mt-1">
+                  <span>Total Amount</span>
+                  <span>₹{calculateTotal().toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-4">Notes</h2>
-          <textarea
-            placeholder="Add notes for your client"
-            value={invoiceData.notes}
-            onChange={(e) => handleChange("main", "notes", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            rows="3"
-          />
-        </div>
+          {/* Notes */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-medium mb-4">Notes</h2>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-          <h2 className="text-lg font-semibold mb-4">Account Details</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
-            <select
-              value={invoiceData.accountDetails.accountType}
-              onChange={(e) => handleChange("accountDetails", "accountType", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            >
-              <option value="savings">Savings</option>
-              <option value="current">Current</option>
-            </select>
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Beneficiary Name</label>
-            <input
-              type="text"
-              placeholder="Beneficiary Name"
-              value={invoiceData.accountDetails.beneficiaryName}
-              onChange={(e) => handleChange("accountDetails", "beneficiaryName", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
+            <textarea
+              value={invoiceData.notes}
+              onChange={(e) => handleChange("notes", e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              rows="3"
+              placeholder="Add any additional notes here..."
             />
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
-            <input
-              type="text"
-              placeholder="Account Number"
-              value={invoiceData.accountDetails.accountNumber}
-              onChange={(e) => handleChange("accountDetails", "accountNumber", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            />
+          {/* Digital Signature */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-medium mb-4">Digital Signature</h2>
+
+            <DigitalSignature data={{ signature: invoiceData.signature }} onChange={handleChange} />
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
-            <input
-              type="text"
-              placeholder="Bank Name"
-              value={invoiceData.accountDetails.bankName}
-              onChange={(e) => handleChange("accountDetails", "bankName", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            />
+          {/* Bank Details */}
+          <div className="bg-white p-4 rounded-lg shadow-sm">
+            <h2 className="text-lg font-medium mb-4">Bank Details</h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Account Type</label>
+
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => handleChange("accountType", "savings")}
+                    className={`px-4 py-2 rounded-full ${
+                      invoiceData.accountType === "savings" ? "bg-[#12766A] text-white" : "bg-gray-200"
+                    }`}
+                  >
+                    Savings
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleChange("accountType", "current")}
+                    className={`px-4 py-2 rounded-full ${
+                      invoiceData.accountType === "current" ? "bg-[#12766A] text-white" : "bg-gray-200"
+                    }`}
+                  >
+                    Current
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Beneficiary Name</label>
+                <input
+                  type="text"
+                  value={invoiceData.beneficiaryName}
+                  onChange={(e) => handleChange("beneficiaryName", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Account holder name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account No.</label>
+                <input
+                  type="text"
+                  value={invoiceData.accountNumber}
+                  onChange={(e) => handleChange("accountNumber", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Account number"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                <input
+                  type="text"
+                  value={invoiceData.bankName}
+                  onChange={(e) => handleChange("bankName", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="Bank name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">IFSC Code</label>
+                <input
+                  type="text"
+                  value={invoiceData.ifscCode}
+                  onChange={(e) => handleChange("ifscCode", e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  placeholder="IFSC code"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">IFSC Code</label>
-            <input
-              type="text"
-              placeholder="IFSC Code"
-              value={invoiceData.accountDetails.ifscCode}
-              onChange={(e) => handleChange("accountDetails", "ifscCode", e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#12766A] focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        <button
-          onClick={handleSave}
-          className="w-full py-3 text-white bg-[#12766A] rounded-md hover:bg-[#0e5d54] transition-colors font-medium text-lg"
-        >
-          Continue
-        </button>
+          {/* Save Button */}
+          <button
+            type="button"
+            onClick={handleSave}
+            className="w-full py-3 bg-[#12766A] text-white rounded-full font-medium"
+          >
+            {isEditing ? "Update Invoice" : "Save Invoice"}
+          </button>
+        </form>
       </div>
+
+      {/* Success Alert */}
+      <IonAlert
+        isOpen={showAlert}
+        onDidDismiss={handleAlertDismiss}
+        header="Success"
+        message={alertMessage}
+        buttons={["OK"]}
+      />
     </div>
   )
 }
