@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Camera, ChevronDown, User, Building2, Users, Lock, HelpCircle } from "lucide-react"

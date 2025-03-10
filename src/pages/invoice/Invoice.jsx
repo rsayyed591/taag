@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { PlusCircle, X, Calendar, DollarSign } from 'lucide-react'
