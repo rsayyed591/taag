@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid/v4';
 import { db } from '../../firebase.config';
 import { useAuth } from '../context/AuthContext';
 
