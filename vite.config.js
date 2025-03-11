@@ -10,6 +10,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['uuid/v4'],
+    include: ['uuid'],
   },
 })

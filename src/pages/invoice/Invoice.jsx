@@ -1,13 +1,11 @@
 import { Calendar, DollarSign, X } from 'lucide-react'
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { PlusCircle, X, Calendar } from 'lucide-react'
+import { PlusCircle } from 'lucide-react'
 import SearchBar from "../../components/SearchBar"
 import EmptyState from "../../components/EmptyState"
 import BottomNavigation from "../../components/BottomNavigation"
-import EmptyState from "../../components/EmptyState"
 import OnboardingSpotlight from "../../components/OnboardingSpotlight"
-import SearchBar from "../../components/SearchBar"
 import { useAuth } from "../../context/AuthContext"
 import { useInvoices } from "../../hooks/useInvoices"
 
@@ -69,14 +67,14 @@ function Invoice() {
     setFilteredInvoices(filtered)
   }
 
-  const handleInvoiceClick = (brandName) => {
-    navigate(`/invoice/${brandName}`)
-  }
+  // const handleInvoiceClick = (brandName) => {
+  //   navigate(`/invoice/${brandName}`)
+  // }
 
-  const openAddPaymentModal = (invoice) => {
-    setSelectedInvoice(invoice);
-    setShowAddPaymentModal(true);
-  }
+  // const openAddPaymentModal = (invoice) => {
+  //   setSelectedInvoice(invoice);
+  //   setShowAddPaymentModal(true);
+  // }
 
   const handleAddPayment = () => {
     if (!selectedInvoice || !paymentDetails.amount || Number(paymentDetails.amount) <= 0) {

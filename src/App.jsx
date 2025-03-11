@@ -9,10 +9,8 @@ import PhoneVerification from "./pages/auth/PhoneVerification";
 import Socials from "./pages/auth/Socials";
 import Success from "./pages/auth/Success";
 import UserType from "./pages/auth/UserType";
-import Compaign from "./pages/compaign/Compaign";
 import ChatScreen from "./pages/home/ChatScreen";
 import Home from "./pages/home/Home";
-import EditInvoiceForm from "./pages/invoice/EditInvoiceForm";
 import Invoice from "./pages/invoice/Invoice";
 import NewInvoice from "./pages/invoice/NewInvoice";
 import ViewInvoice from "./pages/invoice/ViewInvoice";
@@ -52,12 +50,6 @@ function App() {
             </ProtectedRoute>
           } />
           
-          <Route path="/compaign" element={
-            <ProtectedRoute>
-              <Compaign />
-            </ProtectedRoute>
-          } />
-          
           {/* Invoice Routes */}
           <Route path="/invoice" element={
             <ProtectedRoute>
@@ -74,12 +66,6 @@ function App() {
           <Route path="/invoice/:id" element={
             <ProtectedRoute>
               <ViewInvoice />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/invoice/new-invoice/edit-form" element={
-            <ProtectedRoute>
-              <EditInvoiceForm />
             </ProtectedRoute>
           } />
           
