@@ -1,43 +1,29 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { ChevronDown, ChevronUp, Edit2 } from "lucide-react"
+import { useState } from "react"
+import { useInvoices } from "../../hooks/useInvoices"
 
-function AccountDetails({ data, onEdit, isEditing = false }) {
+function AccountDetails({ invoiceId, data, onEdit, isEditing = false }) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [localData, setLocalData] = useState({
-    accountType: data.accountType || "savings",
-    beneficiaryName: data.beneficiaryName || "",
-    accountNumber: data.accountNumber || "",
-    bankName: data.bankName || "",
-    ifscCode: data.ifscCode || "",
-  })
+  const { updateInvoice, loading } = useInvoices()
 
-  useEffect(() => {
-    // Update local data when props change
-    setLocalData({
-      accountType: data.accountType || "savings",
-      beneficiaryName: data.beneficiaryName || "",
-      accountNumber: data.accountNumber || "",
-      bankName: data.bankName || "",
-      ifscCode: data.ifscCode || "",
-    })
-  }, [data])
+  const handleChange = async (field, value) => {
+    if (!isEditing) return
 
-  const handleChange = (field, value) => {
-    setLocalData((prev) => {
-      const updated = {
-        ...prev,
+    try {
+      const updatedData = {
+        ...data,
         [field]: value,
       }
-
-      // Immediately update parent data
-      if (isEditing) {
-        data.onChange(field, value)
-      }
-
-      return updated
-    })
+      
+      await updateInvoice(invoiceId, {
+        accountDetails: updatedData
+      })
+    } catch (error) {
+      console.error('Error updating account details:', error)
+      alert('Failed to update account details')
+    }
   }
 
   return (
@@ -53,8 +39,9 @@ function AccountDetails({ data, onEdit, isEditing = false }) {
             onEdit()
           }}
           className="text-[#12766A] hover:bg-[#12766A10] p-2 rounded-full"
+          disabled={loading}
         >
-          {isEditing ? "Save" : <Edit2 className="w-5 h-5" />}
+          {loading ? "Saving..." : (isEditing ? "Save" : <Edit2 className="w-5 h-5" />)}
         </button>
       </div>
 
@@ -67,7 +54,7 @@ function AccountDetails({ data, onEdit, isEditing = false }) {
                 <button
                   onClick={isEditing ? () => handleChange("accountType", "savings") : undefined}
                   className={`px-4 py-2 rounded-full ${
-                    localData.accountType === "savings" ? "bg-[#12766A] text-white" : "bg-gray-200"
+                    data.accountType === "savings" ? "bg-[#12766A] text-white" : "bg-gray-200"
                   }`}
                   disabled={!isEditing}
                 >
@@ -76,7 +63,7 @@ function AccountDetails({ data, onEdit, isEditing = false }) {
                 <button
                   onClick={isEditing ? () => handleChange("accountType", "current") : undefined}
                   className={`px-4 py-2 rounded-full ${
-                    localData.accountType === "current" ? "bg-[#12766A] text-white" : "bg-gray-200"
+                    data.accountType === "current" ? "bg-[#12766A] text-white" : "bg-gray-200"
                   }`}
                   disabled={!isEditing}
                 >
@@ -88,7 +75,7 @@ function AccountDetails({ data, onEdit, isEditing = false }) {
               <label className="text-sm text-gray-500 block mb-1">Beneficiary Name</label>
               <input
                 type="text"
-                value={localData.beneficiaryName}
+                value={data.beneficiaryName}
                 onChange={(e) => handleChange("beneficiaryName", e.target.value)}
                 readOnly={!isEditing}
                 className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
@@ -98,7 +85,7 @@ function AccountDetails({ data, onEdit, isEditing = false }) {
               <label className="text-sm text-gray-500 block mb-1">Bank Account No.</label>
               <input
                 type="text"
-                value={localData.accountNumber}
+                value={data.accountNumber}
                 onChange={(e) => handleChange("accountNumber", e.target.value)}
                 readOnly={!isEditing}
                 className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
@@ -108,7 +95,7 @@ function AccountDetails({ data, onEdit, isEditing = false }) {
               <label className="text-sm text-gray-500 block mb-1">Bank Name</label>
               <input
                 type="text"
-                value={localData.bankName}
+                value={data.bankName}
                 onChange={(e) => handleChange("bankName", e.target.value)}
                 readOnly={!isEditing}
                 className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
@@ -118,7 +105,7 @@ function AccountDetails({ data, onEdit, isEditing = false }) {
               <label className="text-sm text-gray-500 block mb-1">IFSC Code</label>
               <input
                 type="text"
-                value={localData.ifscCode}
+                value={data.ifscCode}
                 onChange={(e) => handleChange("ifscCode", e.target.value)}
                 readOnly={!isEditing}
                 className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}

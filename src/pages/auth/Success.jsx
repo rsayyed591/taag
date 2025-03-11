@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 function Success() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [userType, setUserType] = useState("");
 
   useEffect(() => {
-    // Get user type from localStorage
-    const userProfile = JSON.parse(localStorage.getItem("userProfiles")) || {}; // Get userData
-    const storedUserType = userProfile.userType || "User";
-    setUserType(storedUserType.toLowerCase());
-  }, []);
+    if (user) {
+      setUserType(user.userType?.toLowerCase() || "user");
+    }
+  }, [user]);
 
   const handleContinue = () => {
-    // Navigate to home page
     navigate("/home");
   };
+
+  if (!user) {
+    navigate("/auth/phone-verification");
+    return null;
+  }
 
   return (
     <div className="page-container mt-24">
@@ -25,7 +30,7 @@ function Success() {
           {/* User Avatar */}
           <div className="bg-gray-100 rounded-full p-4 mb-6 md:p-6 md:mb-8">
             <img
-              src="/user.png"
+              src={user.avatar || "/user.png"}
               alt="User"
               width={40}
               height={40}

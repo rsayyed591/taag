@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { ArrowLeft } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { createOrUpdateUserProfile, getUserProfile } from "../../services/userProfile"
 
 function CreatorDetails() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState("instagram")
+  
   const [formData, setFormData] = useState({
     name: "",
     emailId: "",
@@ -25,27 +27,35 @@ function CreatorDetails() {
     location: "",
   })
 
+  // Fetch user profile data when component mounts
   useEffect(() => {
-  const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || [];
-  const activeProfileId = localStorage.getItem("activeProfileId");
+    const fetchProfile = async () => {
+      try {
+        const { success, profile } = await getUserProfile();
+        if (success && profile.creatorDetails) {
+          setFormData(profile.creatorDetails);
+        }
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
 
-  console.log("Stored Profiles:", storedProfiles);
-  console.log("Active Profile ID:", activeProfileId);
+    fetchProfile();
+  }, []);
 
-  if (activeProfileId) {
-    const activeProfile = storedProfiles.find(profile => String(profile.id) === String(activeProfileId));
-    console.log("Active Profile Found:", activeProfile);
-
-    if (activeProfile?.creatorDetails) {
-      console.log("Setting Form Data:", activeProfile.creatorDetails);
-      setFormData(activeProfile.creatorDetails);
-    } else if (storedProfiles.length > 0) {
-      setFormData(storedProfiles[0].creatorDetails);
+  const handleSave = async () => {
+    try {
+      await createOrUpdateUserProfile({
+        creatorDetails: {
+          ...formData
+        }
+      });
+      navigate("/profile");
+    } catch (error) {
+      console.error('Error updating categories:', error);
+      alert('Error saving categories. Please try again.');
     }
-  } else if (storedProfiles.length > 0) {
-    setFormData(storedProfiles[0].creatorDetails);
-  }
-}, []); 
+  };
 
   const handleChange = (field, value, platform = null) => {
     setFormData((prev) => {
@@ -76,25 +86,6 @@ function CreatorDetails() {
     });
   };
   
-
-  const handleSave = () => {
-    const existingUserData = JSON.parse(localStorage.getItem("userData")) || {}; // Get userData
-    const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []; // Get userProfiles
-    const activeProfileId = localStorage.getItem("activeProfileId"); // Get active profile ID
-
-    existingUserData.creatorDetails = formData; // Update creatorDetails
-
-    const activeIndex = storedProfiles.findIndex(p => String(p.id) === String(activeProfileId)); // Find profile by ID
-
-    if (activeIndex !== -1) {
-        storedProfiles[activeIndex] = { ...storedProfiles[activeIndex], ...existingUserData };
-    }
-
-    localStorage.setItem("userProfiles", JSON.stringify(storedProfiles));
-    localStorage.setItem("userData", JSON.stringify(existingUserData)); // Save updated data
-    navigate("/profile");
-};
-
 
   const categories = [
     "Tech",

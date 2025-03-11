@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { Camera, ChevronDown, User, Building2, Users, Lock, HelpCircle } from "lucide-react"
 import { IonAlert } from "@ionic/react"
+import { Building2, Camera, ChevronDown, HelpCircle, Lock, User, Users } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import BottomNavigation from "../../components/BottomNavigation"
 
 function Profile() {
@@ -79,6 +79,14 @@ function Profile() {
     { icon: <Lock className="w-5 h-5" />, label: "Reset Password", path: "/profile/reset-password" },
     { icon: <HelpCircle className="w-5 h-5" />, label: "FAQs", path: "/profile/faqs" },
   ]
+
+  const handleSignOut = () => {
+    localStorage.removeItem('uid');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    
+    navigate('/');
+  };
 
   if (!selectedProfile) return <div className="flex items-center justify-center h-screen">Loading...</div>
 
@@ -234,6 +242,15 @@ function Profile() {
           localStorage.setItem("hasSeenProfileSpotlight", "true")
         }}
       />
+
+      <div className="profile-action-buttons">
+        <button 
+          onClick={handleSignOut}
+          className="sign-out-button"
+        >
+          Sign Out
+        </button>
+      </div>
 
       <BottomNavigation activeTab="profile" />
     </div>

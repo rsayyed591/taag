@@ -1,39 +1,29 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { ChevronDown, ChevronUp, Edit2 } from "lucide-react"
+import { useState } from "react"
+import { useInvoices } from "../../hooks/useInvoices"
 
-function InvoiceNumber({ data, onEdit, isEditing = false }) {
+function InvoiceNumber({ invoiceId, data, onEdit, isEditing = false }) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [localData, setLocalData] = useState({
-    invoiceNumber: data.invoiceNumber || "",
-    invoiceDate: data.invoiceDate || "",
-    dueDate: data.dueDate || "",
-  })
+  const { updateInvoice, loading } = useInvoices()
 
-  useEffect(() => {
-    // Update local data when props change
-    setLocalData({
-      invoiceNumber: data.invoiceNumber || "",
-      invoiceDate: data.invoiceDate || "",
-      dueDate: data.dueDate || "",
-    })
-  }, [data])
+  const handleChange = async (field, value) => {
+    if (!isEditing) return
 
-  const handleChange = (field, value) => {
-    setLocalData((prev) => {
-      const updated = {
-        ...prev,
+    try {
+      const updatedData = {
+        ...data,
         [field]: value,
       }
-
-      // Immediately update parent data
-      if (isEditing) {
-        data.onChange(field, value)
-      }
-
-      return updated
-    })
+      
+      await updateInvoice(invoiceId, {
+        invoiceDetails: updatedData
+      })
+    } catch (error) {
+      console.error('Error updating invoice details:', error)
+      alert('Failed to update invoice details')
+    }
   }
 
   return (
@@ -49,8 +39,9 @@ function InvoiceNumber({ data, onEdit, isEditing = false }) {
             onEdit()
           }}
           className="text-[#12766A] hover:bg-[#12766A10] p-2 rounded-full"
+          disabled={loading}
         >
-          {isEditing ? "Save" : <Edit2 className="w-5 h-5" />}
+          {loading ? "Saving..." : (isEditing ? "Save" : <Edit2 className="w-5 h-5" />)}
         </button>
       </div>
 
@@ -61,7 +52,7 @@ function InvoiceNumber({ data, onEdit, isEditing = false }) {
               <label className="text-sm text-gray-500 block mb-1">Invoice Number</label>
               <input
                 type="text"
-                value={localData.invoiceNumber}
+                value={data.invoiceNumber || ""}
                 onChange={(e) => handleChange("invoiceNumber", e.target.value)}
                 readOnly={!isEditing}
                 className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
@@ -72,7 +63,7 @@ function InvoiceNumber({ data, onEdit, isEditing = false }) {
                 <label className="text-sm text-gray-500 block mb-1">Invoice Date</label>
                 <input
                   type="date"
-                  value={localData.invoiceDate}
+                  value={data.invoiceDate || ""}
                   onChange={(e) => handleChange("invoiceDate", e.target.value)}
                   readOnly={!isEditing}
                   className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
@@ -82,7 +73,7 @@ function InvoiceNumber({ data, onEdit, isEditing = false }) {
                 <label className="text-sm text-gray-500 block mb-1">Due Date</label>
                 <input
                   type="date"
-                  value={localData.dueDate}
+                  value={data.dueDate || ""}
                   onChange={(e) => handleChange("dueDate", e.target.value)}
                   readOnly={!isEditing}
                   className={`w-full p-2 border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}

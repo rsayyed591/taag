@@ -1,23 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { ChevronDown, ChevronUp, Edit2 } from "lucide-react"
+import { useState } from "react"
+import { useInvoices } from "../../hooks/useInvoices"
 
-function Notes({ data, onEdit, isEditing = false }) {
+function Notes({ invoiceId, data, onEdit, isEditing = false }) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [localNotes, setLocalNotes] = useState(data.notes || "")
+  const { updateInvoice, loading } = useInvoices()
 
-  useEffect(() => {
-    // Update local data when props change
-    setLocalNotes(data.notes || "")
-  }, [data.notes])
+  const handleChange = async (value) => {
+    if (!isEditing) return
 
-  const handleChange = (value) => {
-    setLocalNotes(value)
-
-    // Immediately update parent data
-    if (isEditing) {
-      data.onChange("notes", value)
+    try {
+      await updateInvoice(invoiceId, {
+        notes: value
+      })
+    } catch (error) {
+      console.error('Error updating notes:', error)
+      alert('Failed to update notes')
     }
   }
 
@@ -34,15 +34,16 @@ function Notes({ data, onEdit, isEditing = false }) {
             onEdit()
           }}
           className="text-[#12766A] hover:bg-[#12766A10] p-2 rounded-full"
+          disabled={loading}
         >
-          {isEditing ? "Save" : <Edit2 className="w-5 h-5" />}
+          {loading ? "Saving..." : (isEditing ? "Save" : <Edit2 className="w-5 h-5" />)}
         </button>
       </div>
 
       {isExpanded && (
         <div className="p-4 border-t border-gray-200">
           <textarea
-            value={localNotes}
+            value={data.notes || ""}
             onChange={(e) => handleChange(e.target.value)}
             readOnly={!isEditing}
             className={`w-full p-2 min-h-[100px] border ${isEditing ? "border-[#12766A]" : "border-gray-200"} rounded-md ${!isEditing && "bg-gray-50"}`}
