@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { PlusCircle, X, Calendar, DollarSign } from 'lucide-react'
+import { PlusCircle, X, Calendar } from 'lucide-react'
 import SearchBar from "../../components/SearchBar"
 import EmptyState from "../../components/EmptyState"
 import BottomNavigation from "../../components/BottomNavigation"
@@ -160,9 +160,9 @@ function Invoice() {
             localStorage.removeItem("invoiceDraft");
             navigate("/invoice/new-invoice");
           }}
-          className="w-full max-w-full h-[39px] bg-[#E4E4E4] rounded-b-[5px] text-center font-medium hover:bg-gray-300 transition"
+          className="w-full max-w-full h-[39px] text-[#1D1D1F] bg-[#E4E4E4] rounded-b-[5px] text-center font-manrope font-bold text-[12px] leading-[100%] tracking-[0.25rem] uppercase hover:bg-gray-300 transition"
         >
-          NEW INVOICE +
+          NEW INVOICE <span className="text-[#12766A] font-extrabold">+</span>
         </button>
 
       <SearchBar onSearch={(term) => console.log("Search:", term)} onFilter={() => console.log("Filter clicked")} className="mt-4" />
@@ -263,8 +263,7 @@ function Invoice() {
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <DollarSign className="w-4 h-4 inline mr-1" />
-                  Amount
+                ₹ Amount
                 </label>
                 <input
                   type="number"

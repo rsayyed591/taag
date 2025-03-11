@@ -17,8 +17,12 @@ import BankDetails from "./pages/profile/BankDetails";
 import Managers from "./pages/profile/Managers";
 import ResetPassword from "./pages/profile/ResetPassword";
 import FAQs from "./pages/profile/FAQs";
-import Compaign from "./pages/compaign/Compaign";
+import Campaign from "./pages/campaign/Campaign";
 import ChatScreen from "./pages/home/ChatScreen"
+import NewCampaign from "./pages/campaign/NewCampaign";
+import CreatorSelection from "./pages/campaign/CreatorSelection";
+import ChatCampaign from "./pages/campaign/ChatCampaign";
+import ViewCampaign from "./pages/campaign/ViewCampaign";
 
 function App() {
   return (
@@ -35,7 +39,6 @@ function App() {
         <Route path="/auth/otp-verification" element={<OtpVerification />} />
         <Route path="/auth/success" element={<Success />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/compaign" element={<Compaign />} />
         <Route path="/invoice" element={<Invoice />} />
         <Route path="/invoice/new-invoice" element={<NewInvoice />} />
         <Route path="/invoice/:brandName" element={<ViewInvoice />} />
@@ -45,7 +48,13 @@ function App() {
         <Route path="/profile/managers" element={<Managers />} />
         <Route path="/profile/reset-password" element={<ResetPassword />} />
         <Route path="/profile/faqs" element={<FAQs />} />
-        <Route path="/chat/:chatName" element={<ChatScreen />} />      </Routes>
+        <Route path="/chat/:chatName" element={<ChatScreen />} />      
+        <Route path="/campaign" element={<Campaign />} />
+        <Route path="/campaign/new-campaign" element={<NewCampaign />} />
+        <Route path="/campaign/creator/:campaignId" element={<CreatorSelection />} />
+        <Route path="/campaign/view/:campaignId" element={<ViewCampaign />} />
+        <Route path="/chat/:campaignId/:creatorName" element={<ChatCampaign />} />
+      </Routes>
     </Router>
   );
 }

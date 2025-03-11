@@ -10,6 +10,11 @@ function EmptyState({ type, onNext }) {
       description: "Create an invoice once you work on a campaign.",
       icon: "/icons/invoice-empty.svg",
     },
+    campaign: {
+      title: "No Compaigns yet!",
+      description: "Create a campaign by tapping +.",
+      icon: "/icons/invoice-empty.svg",
+    },
   }
 
   return (

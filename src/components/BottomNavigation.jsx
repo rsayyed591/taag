@@ -12,17 +12,17 @@ function BottomNavigation() {
           className="w-6 h-6" 
         />
       </Link>
+      <Link to="/campaign" className="flex flex-col items-center transition-colors">
+        <img 
+          src={location.pathname === '/campaign' ? "/icons/compaign-active.svg" : "/icons/compaign.svg"} 
+          alt="Compaign" 
+          className="w-6 h-6" 
+        />
+      </Link>
       <Link to="/invoice" className="flex flex-col items-center transition-colors">
         <img 
           src={location.pathname === '/invoice' ? "/icons/invoice-active.svg" : "/icons/invoice.svg"} 
           alt="Invoices" 
-          className="w-6 h-6" 
-        />
-      </Link>
-      <Link to="/compaign" className="flex flex-col items-center transition-colors">
-        <img 
-          src={location.pathname === '/compaign' ? "/icons/compaign-active.svg" : "/icons/compaign.svg"} 
-          alt="Compaign" 
           className="w-6 h-6" 
         />
       </Link>
