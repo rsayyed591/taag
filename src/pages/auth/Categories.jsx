@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useProfile } from "../../hooks/useProfile";
 
 function Categories() {
   const navigate = useNavigate();
+  const { updateProfile, loading } = useProfile();
   const [selectedCategories, setSelectedCategories] = useState([]);
 
   const categories = [
@@ -28,13 +30,19 @@ function Categories() {
     }
   };
 
-  const handleContinue = () => {
-    // Store selected categories in localStorage
-    const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {}; // Get userData
-    existingUserData.categories = selectedCategories; // Update creatorDetails
-  
-    localStorage.setItem("currentUser", JSON.stringify(existingUserData));
-    navigate("/auth/notifications");
+  const handleContinue = async () => {
+    try {
+      await updateProfile({
+        categories: selectedCategories,
+        creatorDetails: {
+          category: selectedCategories
+        }
+      });
+      navigate("/auth/notifications");
+    } catch (error) {
+      console.error('Error updating categories:', error);
+      alert('Error saving categories. Please try again.');
+    }
   };
 
   return (
@@ -63,9 +71,9 @@ function Categories() {
         <button
           className="btn-primary2 w-full max-w-xs"
           onClick={handleContinue}
-          disabled={selectedCategories.length === 0}
+          disabled={selectedCategories.length === 0 || loading}
         >
-          Continue
+          {loading ? 'Saving...' : 'Continue'}
         </button>
       </div>
     </div>

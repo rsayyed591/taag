@@ -1,12 +1,19 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Download, Share2, Trash2, Send, Check, Edit2, X } from 'lucide-react';
 import { IonAlert } from "@ionic/react";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import autoTable from "jspdf-autotable";
+import { ArrowLeft, Check, Download, Edit2, Send, Share2, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useInvoices } from "../../hooks/useInvoices";
+
 function ViewInvoice() {
-  const { brandName } = useParams();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { getInvoiceById, deleteInvoice, loading } = useInvoices();
+  
   const [invoice, setInvoice] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showForwardModal, setShowForwardModal] = useState(false);
@@ -16,37 +23,29 @@ function ViewInvoice() {
   const [alertHeader, setAlertHeader] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
   const [alertButtons, setAlertButtons] = useState([]);
-  const navigate = useNavigate();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Load invoice from localStorage
-    const invoices = JSON.parse(localStorage.getItem("invoices") || "[]");
-    const currentInvoice = invoices.find((inv) => inv.brandName === brandName);
-    if (currentInvoice) {
-      setInvoice(currentInvoice);
+    if (id) {
+      loadInvoice();
     }
+  }, [id]);
 
-    // Load chats from localStorage
-    const chatHistory = JSON.parse(localStorage.getItem("chatHistory") || "{}");
-    
-    // Convert chat history object to array for display
-    const chatArray = Object.keys(chatHistory).map(chatName => ({
-      id: chatName,
-      name: chatName
-    }));
-    
-    // If no chats in localStorage, use demo data
-    if (chatArray.length === 0) {
-      setChats([
-        { id: 1, name: "MamaEarth" },
-        { id: 2, name: "Nykaa" },
-        { id: 3, name: "Adidas" },
-        { id: 4, name: "Nike" },
-      ]);
-    } else {
-      setChats(chatArray);
+  const loadInvoice = async () => {
+    try {
+      const data = await getInvoiceById(id);
+      if (data) {
+        setInvoice(data);
+      } else {
+        setError('Invoice not found');
+        showIonicAlert('Error', 'Invoice not found');
+      }
+    } catch (error) {
+      console.error('Error loading invoice:', error);
+      setError(error.message);
+      showIonicAlert('Error', 'Failed to load invoice');
     }
-  }, [brandName]);
+  };
 
   const generatePDF = () => {
     if (!invoice) return null;
@@ -81,10 +80,10 @@ function ViewInvoice() {
     // Add invoice details on the right
     doc.setFontSize(10);
     doc.text("Invoice Date:", 150, 45);
-    doc.text(`${invoice.invoiceNumber.invoiceDate || new Date().toLocaleDateString()}`, 180, 45);
+    doc.text(`${invoice.invoiceDetails.invoiceDate || new Date().toLocaleDateString()}`, 180, 45);
     
     doc.text("Due Date:", 150, 52);
-    doc.text(`${invoice.invoiceNumber.dueDate || new Date().toLocaleDateString()}`, 180, 52);
+    doc.text(`${invoice.inoviceDetails.dueDate || new Date().toLocaleDateString()}`, 180, 52);
     
     // Add bill to section
     doc.setFontSize(12);
@@ -213,11 +212,14 @@ function ViewInvoice() {
       },
       {
         text: "Delete",
-        handler: () => {
-          const invoices = JSON.parse(localStorage.getItem("invoices") || "[]");
-          const updatedInvoices = invoices.filter((inv) => inv.brandName !== brandName);
-          localStorage.setItem("invoices", JSON.stringify(updatedInvoices));
-          navigate("/invoice");
+        handler: async () => {
+          try {
+            await deleteInvoice(id);
+            navigate("/invoice");
+          } catch (error) {
+            console.error('Error deleting invoice:', error);
+            showIonicAlert('Error', 'Failed to delete invoice');
+          }
         }
       }
     ]);
@@ -226,10 +228,7 @@ function ViewInvoice() {
   };
 
   const handleEdit = () => {
-    // Save current invoice as draft for editing
-    localStorage.setItem("invoiceDraft", JSON.stringify(invoice));
-    localStorage.setItem("editingInvoiceId", invoice.id); // Store the ID of the invoice being edited
-    navigate("/invoice/new-invoice");
+    navigate(`/invoice/edit/${id}`);
     setShowMenu(false);
   };
 
@@ -278,38 +277,40 @@ function ViewInvoice() {
   const showIonicAlert = (header, message) => {
     setAlertHeader(header);
     setAlertMessage(message);
-    setAlertButtons(["OK"]);
+    setAlertButtons([{
+      text: 'OK',
+      handler: () => {
+        if (message === 'Invoice not found') {
+          navigate('/invoice');
+        }
+      }
+    }]);
     setShowAlert(true);
   };
 
-  if (!invoice) return <div className="flex items-center justify-center h-screen">Loading...</div>;
-
-  // Calculate total amount
-  const calculateSubtotal = () => {
-    return invoice.amountDetails.particulars?.reduce((sum, item) => sum + (Number.parseFloat(item.amount) || 0), 0) || 0;
-  };
-
-  const calculateTax = () => {
-    const subtotal = calculateSubtotal();
-    return invoice.amountDetails.taxType === "No Tax"
-      ? 0
-      : (subtotal * (Number.parseFloat(invoice.amountDetails.taxRate) || 0)) / 100;
-  };
-
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
-  };
-
-  const calculateTotalReceived = () => {
-    return (invoice.amountDetails.receivedPayments || []).reduce(
-      (sum, payment) => sum + (Number.parseFloat(payment.amount) || 0),
-      0,
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#12766A]" />
+      </div>
     );
-  };
+  }
 
-  const calculateDueAmount = () => {
-    return calculateTotal() - calculateTotalReceived();
-  };
+  if (error || !invoice) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">{error || 'Invoice not found'}</p>
+          <button 
+            onClick={() => navigate('/invoice')}
+            className="mt-4 text-[#12766A] hover:underline"
+          >
+            Back to Invoices
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -417,7 +418,7 @@ function ViewInvoice() {
         <div className="flex flex-row justify-between items-start mb-6 border-b pb-4">
           <div className="mb-4 md:mb-0">
             <h1 className="text-xl md:text-2xl font-bold text-[#12766A]">INVOICE</h1>
-            <p className="text-sm text-gray-600">{invoice.invoiceNumber.invoiceNumber || "INV-" + Date.now()}</p>
+            <p className="text-sm text-gray-600">{invoice.invoiceDetails.invoiceNumber || "INV-" + Date.now()}</p>
           </div>
           <div className="md:text-right">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-gray-100 rounded-md flex items-center justify-center mb-2">
@@ -440,10 +441,10 @@ function ViewInvoice() {
           <div className="md:text-right">
             <div className="grid grid-cols-2 gap-1 text-xs">
               <p className="text-gray-600 text-left">Invoice Date:</p>
-              <p className="font-medium">{invoice.invoiceNumber.invoiceDate || new Date().toLocaleDateString()}</p>
+              <p className="font-medium">{invoice.invoiceDetails.invoiceDate || new Date().toLocaleDateString()}</p>
 
               <p className="text-gray-600 text-left">Due Date:</p>
-              <p className="font-medium">{invoice.invoiceNumber.dueDate || new Date().toLocaleDateString()}</p>
+              <p className="font-medium">{invoice.invoiceDetails.dueDate || new Date().toLocaleDateString()}</p>
 
               {invoice.companyDetails.gstin && (
                 <>
@@ -482,19 +483,19 @@ function ViewInvoice() {
             <tfoot>
               <tr>
                 <td className="py-2 px-3 text-right text-sm font-medium">Subtotal</td>
-                <td className="py-2 px-3 text-right text-sm">₹{calculateSubtotal().toFixed(2)}</td>
+                <td className="py-2 px-3 text-right text-sm">₹{invoice.amountDetails.subtotal.toFixed(2)}</td>
               </tr>
               {invoice.amountDetails.taxType !== "No Tax" && (
                 <tr>
                   <td className="py-2 px-3 text-right text-sm font-medium">
                     {invoice.amountDetails.taxType} ({invoice.amountDetails.taxRate}%)
                   </td>
-                  <td className="py-2 px-3 text-right text-sm">₹{calculateTax().toFixed(2)}</td>
+                  <td className="py-2 px-3 text-right text-sm">₹{invoice.amountDetails.tax.toFixed(2)}</td>
                 </tr>
               )}
               <tr className="bg-gray-50">
                 <td className="py-2 px-3 text-right text-sm font-bold">Total</td>
-                <td className="py-2 px-3 text-right text-sm font-bold">₹{calculateTotal().toFixed(2)}</td>
+                <td className="py-2 px-3 text-right text-sm font-bold">₹{invoice.amountDetails.total.toFixed(2)}</td>
               </tr>
             </tfoot>
           </table>
@@ -525,13 +526,13 @@ function ViewInvoice() {
                     <td colSpan="2" className="py-2 px-3 text-right text-xs font-medium">
                       Total Received
                     </td>
-                    <td className="py-2 px-3 text-right text-xs font-medium">₹{calculateTotalReceived().toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right text-xs font-medium">₹{invoice.amountDetails.receivedPayments.reduce((sum, payment) => sum + (Number.parseFloat(payment.amount) || 0), 0).toFixed(2)}</td>
                   </tr>
                   <tr className="bg-[#12766A10]">
                     <td colSpan="2" className="py-2 px-3 text-right text-xs font-bold">
                       Amount Due
                     </td>
-                    <td className="py-2 px-3 text-right text-xs font-bold">₹{calculateDueAmount().toFixed(2)}</td>
+                    <td className="py-2 px-3 text-right text-xs font-bold">₹{invoice.amountDetails.amountDue.toFixed(2)}</td>
                   </tr>
                 </tbody>
               </table>

@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Upload, X } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { useAuth } from "../../context/AuthContext"
+import { createOrUpdateUserProfile, getUserProfile } from "../../services/userProfile"
 
 function BankDetails() {
   const navigate = useNavigate()
+  const { user, loading } = useAuth()
   const [formData, setFormData] = useState({
     accountNumber: "",
     accountType: "savings",
@@ -16,17 +19,38 @@ function BankDetails() {
   })
 
   useEffect(() => {
-    const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || [];
-    const activeProfileId = localStorage.getItem("activeProfileId"); // Get active profile ID
-
-    if (activeProfileId) {
-      const activeProfile = storedProfiles.find(profile => String(profile.id) === String(activeProfileId));
+    const fetchProfile = async () => {
       
-      if (activeProfile?.bankDetails) {
-        setFormData(activeProfile.bankDetails);
-      }
+        try {
+          const { success, profile } = await getUserProfile();
+          if (success && profile.bankDetails) {
+            setFormData(profile.bankDetails);
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+        }
+      
+    };
+
+    fetchProfile();
+  }, [user, loading]);
+
+  const handleSave = async () => {
+    try {
+      // Debug log to see what we're trying to save
+      console.log('Attempting to save bank details:', formData);
+      
+      await createOrUpdateUserProfile({
+        bankDetails: {
+          ...formData// This might be the issue - we're nesting under bankDetails
+        }
+      });
+      navigate("/profile");
+    } catch (error) {
+      console.error('Error updating bank details:', error);
+      alert('Error saving bank details. Please try again.');
     }
-}, []);
+  };
 
 const handleChange = (field, value) => {
   setFormData((prev) => ({
@@ -49,26 +73,6 @@ const handleFileChange = (e) => {
     reader.readAsDataURL(file);
   }
 };
-
-const handleSave = () => {
-  const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []; // Get userProfiles
-  const activeProfileId = localStorage.getItem("activeProfileId"); // Get active profile ID
-
-  const activeIndex = storedProfiles.findIndex(p => String(p.id) === String(activeProfileId)); // Find profile by ID
-
-  if (activeIndex !== -1) {
-      storedProfiles[activeIndex] = {
-          ...storedProfiles[activeIndex],
-          bankDetails: formData, // Update bank details
-      };
-      console.log(formData)
-
-      localStorage.setItem("userProfiles", JSON.stringify(storedProfiles)); // Save updated profiles
-  }
-
-  navigate("/profile");
-};
-
 
   return (
     <div className="min-h-screen bg-[#F2F1F1]">

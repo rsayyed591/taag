@@ -1,17 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useProfile } from '../../hooks/useProfile';
+import { sendOTP, verifyOTP } from '../../services/phoneAuth';
 
 function OtpVerification() {
   const navigate = useNavigate();
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(30);
   const [canRetry, setCanRetry] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const inputRefs = useRef([]);
   const timerInterval = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { handleAuthFlow } = useProfile();
 
   useEffect(() => {
-    inputRefs.current = inputRefs.current.slice(0, 4);
+    inputRefs.current = inputRefs.current.slice(0, 6);
     const storedPhoneNumber = localStorage.getItem("phoneNumber") || "";
     setPhoneNumber(storedPhoneNumber);
 
@@ -51,7 +55,7 @@ function OtpVerification() {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
-    if (value && index < 3 && inputRefs.current[index + 1]) {
+    if (value && index < 5 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
   };
@@ -62,17 +66,60 @@ function OtpVerification() {
     }
   };
 
-  const handleRetry = () => {
-    setOtp(["", "", "", ""]);
-    startTimer();
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
+  const handleRetry = async () => {
+    try {
+      if (!phoneNumber) {
+        throw new Error('Phone number not found');
+      }
+      
+      setOtp(["", "", "", "", "", ""]);
+      if (inputRefs.current[0]) {
+        inputRefs.current[0].focus();
+      }
+      
+      startTimer();
+      const result = await sendOTP(phoneNumber);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send OTP');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error resending OTP. Please try again.');
     }
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (otp.every((digit) => digit !== "")) {
-      navigate("/auth/success");
+      setIsLoading(true);
+      try {
+        const otpString = otp.join('');
+        const result = await verifyOTP(otpString);
+        
+        if (result.success) {
+          // User is now authenticated with Firebase
+          const { user } = result;
+          
+          // Store the UID in localStorage
+          localStorage.setItem('uid', user.uid);
+          console.log('User authenticated with UID:', user.uid);
+          
+          // Use the handleAuthFlow function to determine where to navigate
+          await handleAuthFlow();
+        } else {
+          alert(result.error || 'Invalid OTP');
+          setOtp(["", "", "", "", "", ""]);
+          if (inputRefs.current[0]) {
+            inputRefs.current[0].focus();
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error verifying OTP. Please try again.');
+        setOtp(["", "", "", "", "", ""]);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -131,8 +178,12 @@ function OtpVerification() {
 
       {/* Footer (Fixed Continue Button) */}
       <div className="flex justify-center px-6 z-50">
-        <button className="btn-primary2 w-full max-w-xs py-3" onClick={handleContinue} disabled={!otp.every((digit) => digit !== "")}>
-          Continue
+        <button 
+          className="btn-primary2 w-full py-3" 
+          onClick={handleContinue} 
+          disabled={!otp.every((digit) => digit !== "") || isLoading}
+        >
+          {isLoading ? 'Verifying...' : 'Continue'}
         </button>
       </div>
     </div>

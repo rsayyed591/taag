@@ -1,61 +1,40 @@
+import { X } from 'lucide-react';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { X } from 'lucide-react';
+import { sendOTP } from '../../services/phoneAuth';
 
 function PhoneVerification() {
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setPhoneNumber(e.target.value);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (phoneNumber.length >= 10) {
-        const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {}; // Get userData
-        const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []; // Get existing profiles
-        const newid = Math.floor(Math.random() * 1000000);
-        // Create new profile with isActive: true
-        const newProfile = {
-            id: newid,
-            name: "Anonymous",
-            username: existingUserData.socials?.instagramId || "@anonymous",
-            avatar: "/icons/profile.svg",
-            coverImage: "/profile-bg.svg",
-            isActive: true, // Newly added profile is active
-            userType: existingUserData.userType || "creator",
-            phoneNumber: existingUserData.phoneNumber || phoneNumber,
-            creatorDetails: {
-                name: "Anonymous",
-                emailId: existingUserData.socials?.emailId || "@anonymous",
-                instagram: { 
-                    url: existingUserData.socials?.instagramId || "@anonymous", 
-                    reelCost: existingUserData.socials?.instagramReelCost || 0 
-                },
-                youtube: { 
-                    url: existingUserData.socials?.youtubeId || "@anonymous", 
-                    videoCost: existingUserData.socials?.youtubeVideoCost || 0 
-                },
-                category : existingUserData.categories || [],
-            }
-        };
-
-        // Mark all existing profiles as inactive
-        const updatedProfiles = storedProfiles.map(profile => ({
-            ...profile,
-            isActive: false
-        }));
-
-        // Add the new profile to the list
-        updatedProfiles.push(newProfile);
-        localStorage.setItem("activeProfileId",newid);
-
-        // Save updated profiles to localStorage
-        localStorage.setItem("userProfiles", JSON.stringify(updatedProfiles));
-
-        // Remove currentUser from localStorage
-        localStorage.removeItem("currentUser");
-      navigate("/auth/otp-verification");
+      setIsLoading(true);
+      try {
+        // Format phone number to E.164 format if not already formatted
+        const formattedNumber = phoneNumber.startsWith('+') ? phoneNumber : `${phoneNumber}`;
+        
+        // Send OTP
+        const result = await sendOTP(formattedNumber);
+        
+        if (result.success) {
+          // Store phone number for OTP verification page
+          // localStorage.setItem("phoneNumber", formattedNumber);
+          navigate("/auth/otp-verification");
+        } else {
+          alert(result.error || 'Error sending OTP');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error sending OTP. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -65,6 +44,12 @@ function PhoneVerification() {
 
   return (
     <div className="page-container">
+      {/* Move recaptcha-container to top level and make it visible */}
+      <div 
+        id="recaptcha-container" 
+        style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0 }}
+      ></div>
+
       <div className="content-container">
         {/* Heading at the Top */}
         <div className="pt-6 md:pt-12">
@@ -99,12 +84,20 @@ function PhoneVerification() {
 
           {/* Continue Button */}
           <div className="w-full max-w-sm mt-8 md:max-w-md md:flex md:justify-center mb">
-            <button className="btn-primary2 w-full py-3" onClick={handleContinue} disabled={phoneNumber.length < 10}>
-              Continue
+            <button 
+              id="sign-in-button"
+              className="btn-primary2 w-full py-3" 
+              onClick={handleContinue} 
+              disabled={phoneNumber.length < 10 || isLoading}
+            >
+              {isLoading ? 'Sending...' : 'Continue'}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Add invisible reCAPTCHA button */}
+      {/* <div id="sign-in-button"></div> */}
     </div>
   );
 }

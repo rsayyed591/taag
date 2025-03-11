@@ -1,17 +1,35 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useProfile } from "../../hooks/useProfile"
 
 function UserType() {
   const navigate = useNavigate()
+  const { updateProfile, loading } = useProfile()
   const [selectedType, setSelectedType] = useState(null)
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedType) {
-      const existingUserData = JSON.parse(localStorage.getItem("currentUser")) || {}; // Get userData
-      existingUserData.userType = selectedType;
-  
-      localStorage.setItem("currentUser", JSON.stringify(existingUserData));
-      navigate("/auth/socials")
+      try {
+        await updateProfile({
+          userType: selectedType,
+          name: "Anonymous",
+          username: "@anonymous",
+          avatar: "/icons/profile.svg",
+          coverImage: "/profile-bg.svg",
+          isActive: true,
+          creatorDetails: {
+            name: "Anonymous",
+            emailId: "@anonymous",
+            instagram: { url: "@anonymous", reelCost: 0 },
+            youtube: { url: "@anonymous", videoCost: 0 },
+            category: []
+          }
+        })
+        navigate("/auth/socials")
+      } catch (error) {
+        console.error('Error updating user type:', error)
+        alert('Error saving user type. Please try again.')
+      }
     }
   }
 
@@ -51,8 +69,12 @@ function UserType() {
 
       {/* Footer (Fixed at Bottom) */}
       <div className="fixed bottom-6 left-0 right-0 flex justify-center px-6 z-50">
-        <button className="btn-primary2 w-full max-w-xs" onClick={handleContinue} disabled={!selectedType}>
-          Continue
+        <button 
+          className="btn-primary2 w-full max-w-xs" 
+          onClick={handleContinue} 
+          disabled={!selectedType || loading}
+        >
+          {loading ? 'Saving...' : 'Continue'}
         </button>
       </div>
     </div>

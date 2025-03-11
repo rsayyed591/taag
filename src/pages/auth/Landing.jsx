@@ -4,7 +4,7 @@ function Landing() {
   const navigate = useNavigate();
 
   const handleContinue = () => {
-    navigate("/auth/user-type");
+    navigate("/auth/phone-verification");
   };
 
   const handleSignIn = () => {

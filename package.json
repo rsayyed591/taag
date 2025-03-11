@@ -12,6 +12,7 @@
   "dependencies": {
     "@ionic/react": "^8.4.3",
     "@ionic/react-router": "^8.4.3",
+    "firebase": "^11.4.0",
     "framer-motion": "^12.4.10",
     "html2canvas": "^1.4.1",
     "ionicons": "^7.4.0",

@@ -1,15 +1,22 @@
-import { useState, useEffect } from "react"
+import { Calendar, DollarSign, X } from 'lucide-react'
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { PlusCircle, X, Calendar } from 'lucide-react'
 import SearchBar from "../../components/SearchBar"
 import EmptyState from "../../components/EmptyState"
 import BottomNavigation from "../../components/BottomNavigation"
+import EmptyState from "../../components/EmptyState"
 import OnboardingSpotlight from "../../components/OnboardingSpotlight"
+import SearchBar from "../../components/SearchBar"
+import { useAuth } from "../../context/AuthContext"
+import { useInvoices } from "../../hooks/useInvoices"
 
 function Invoice() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { getInvoices, loading } = useInvoices()
   const [invoices, setInvoices] = useState([])
-  const [hasInvoices, setHasInvoices] = useState(false)
+  const [filteredInvoices, setFilteredInvoices] = useState([])
   const [totalAmount, setTotalAmount] = useState(0)
   const [receivedAmount, setReceivedAmount] = useState(0)
   const [showSpotlight, setShowSpotlight] = useState(false)
@@ -22,27 +29,44 @@ function Invoice() {
   })
 
   useEffect(() => {
-    loadInvoices();
+    loadInvoices()
     setTimeout(() => setShowSpotlight(true), 1000)
-  }, [])
+  }, [user])
 
-  const loadInvoices = () => {
-    const storedInvoices = JSON.parse(localStorage.getItem("invoices")) || []
-    setInvoices(storedInvoices)
-    setHasInvoices(storedInvoices.length > 0)
-    
-    // Calculate total and received amounts
-    const total = storedInvoices.reduce((sum, invoice) => sum + (invoice.amount || 0), 0)
-    setTotalAmount(total)
-    
-    const received = storedInvoices.reduce((sum, invoice) => {
-      const invoiceReceived = (invoice.amountDetails.receivedPayments || []).reduce(
-        (paymentSum, payment) => paymentSum + (Number(payment.amount) || 0), 0
-      );
-      return sum + invoiceReceived;
-    }, 0);
-    
-    setReceivedAmount(received);
+  const loadInvoices = async () => {
+    try {
+      const data = await getInvoices()
+      setInvoices(data)
+      setFilteredInvoices(data)
+      
+      // Calculate totals
+      const total = data.reduce((sum, invoice) => sum + (invoice.amountDetails.total || 0), 0)
+      setTotalAmount(total)
+      
+      const received = data.reduce((sum, invoice) => {
+        const invoiceReceived = (invoice.amountDetails.receivedPayments || []).reduce(
+          (paymentSum, payment) => paymentSum + (Number(payment.amount) || 0), 0
+        )
+        return sum + invoiceReceived
+      }, 0)
+      setReceivedAmount(received)
+    } catch (error) {
+      console.error('Error loading invoices:', error)
+    }
+  }
+
+  const handleSearch = (term) => {
+    if (!term.trim()) {
+      setFilteredInvoices(invoices)
+      return
+    }
+
+    const filtered = invoices.filter(invoice => 
+      invoice.brandName.toLowerCase().includes(term.toLowerCase()) ||
+      invoice.campaignName.toLowerCase().includes(term.toLowerCase()) ||
+      invoice.invoiceDetails.invoiceNumber.toLowerCase().includes(term.toLowerCase())
+    )
+    setFilteredInvoices(filtered)
   }
 
   const handleInvoiceClick = (brandName) => {
@@ -165,58 +189,66 @@ function Invoice() {
           NEW INVOICE <span className="text-[#12766A] font-extrabold">+</span>
         </button>
 
-      <SearchBar onSearch={(term) => console.log("Search:", term)} onFilter={() => console.log("Filter clicked")} className="mt-4" />
+      <SearchBar 
+        onSearch={handleSearch} 
+        className="mt-4" 
+      />
 
-      {hasInvoices ? (
+      {/* Invoice List */}
+      {loading ? (
+        <div className="flex justify-center items-center mt-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#12766A]" />
+        </div>
+      ) : filteredInvoices.length > 0 ? (
         <div className="space-y-4 mt-4">
-          {invoices.map((invoice) => (
-            <div key={invoice.id} className="bg-white p-4 rounded-lg shadow-md">
-              <div className="flex justify-between items-center cursor-pointer" onClick={() => handleInvoiceClick(invoice.brandName)}>
+          {filteredInvoices.map((invoice) => (
+            <div 
+              key={invoice.id} 
+              className="bg-white p-4 rounded-lg shadow-md cursor-pointer"
+              onClick={() => navigate(`/invoice/${invoice.id}`)}
+            >
+              <div className="flex justify-between items-center cursor-pointer">
                 <div>
                   <h3 className="font-medium">{invoice.brandName}</h3>
                   <p className="text-sm text-gray-500">{invoice.campaignName}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium">₹{(invoice.amount || 0).toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">{invoice.date || "N/A"}</p>
+                  <p className="font-medium">₹{(invoice.amountDetails.total || 0).toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(invoice.invoiceDetails.invoiceDate).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
               
-              {/* Payment progress */}
+              {/* Payment Progress */}
               <div className="mt-3 pt-3 border-t">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-500">Payment Status</span>
                   <span className="text-sm font-medium">
-                    ₹{(invoice.receivedAmount || 0).toLocaleString()} / ₹{(invoice.amount || 0).toLocaleString()}
+                    ₹{(invoice.amountDetails.receivedPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0).toLocaleString()} / 
+                    ₹{(invoice.amountDetails.total || 0).toLocaleString()}
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-1.5">
                   <div
                     className="bg-[#12766A] h-1.5 rounded-full"
-                    style={{ width: invoice.amount > 0 ? `${((invoice.receivedAmount || 0) / invoice.amount) * 100}%` : "0%" }}
-                  />
-                </div>
-                <div className="flex justify-end mt-2">
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openAddPaymentModal(invoice);
+                    style={{ 
+                      width: invoice.amountDetails.total > 0 
+                        ? `${((invoice.amountDetails.receivedPayments?.reduce((sum, payment) => sum + Number(payment.amount), 0) || 0) / invoice.amountDetails.total) * 100}%` 
+                        : "0%" 
                     }}
-                    className="text-[#12766A] text-sm font-medium flex items-center"
-                  >
-                    <PlusCircle className="w-4 h-4 mr-1" />
-                    Add Payment
-                  </button>
+                  />
                 </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <EmptyState type="invoice" onNext={() => {
-          localStorage.removeItem("invoiceDraft");
-          navigate("/invoice/new-invoice");
-        }} className="mt-4" />
+        <EmptyState 
+          type="invoice" 
+          onNext={() => navigate("/invoice/new-invoice")} 
+          className="mt-4" 
+        />
       )}
 
       {/* Add Payment Modal */}
