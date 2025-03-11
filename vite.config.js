@@ -12,4 +12,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['uuid'],
   },
+  server: {
+    allowedHosts: [
+      'taag.onrender.com',
+      'localhost',
+    ]
+  },
 })
