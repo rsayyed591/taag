@@ -29,7 +29,7 @@ function Notifications() {
       await updateProfile({
         notifications: "allowed"
       });
-      navigate("/auth/phone-verification");
+      navigate("/home");
     } catch (error) {
       console.error('Error updating notifications:', error);
       alert('Error saving notification preference. Please try again.');
