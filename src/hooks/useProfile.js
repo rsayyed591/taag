@@ -53,8 +53,7 @@ export function useProfile() {
   const checkProfileCompletion = (profile) => {
     // Define what constitutes a complete profile
     const isComplete = profile && 
-                      profile.userType && 
-                      (profile.creatorDetails || profile.brandDetails);
+                      profile.userType;
     
     setIsProfileComplete(isComplete);
     return isComplete;
