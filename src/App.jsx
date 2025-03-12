@@ -111,6 +111,13 @@ function App() {
               <ChatScreen />
             </ProtectedRoute>
           } />
+
+          <Route path="/campaign" element={<Campaign />} />
+          <Route path="/campaign/new-campaign" element={<NewCampaign />} />
+          <Route path="/campaign/creator/:campaignId" element={<CreatorSelection />} />
+          <Route path="/campaign/view/:campaignId" element={<ViewCampaign />} />
+          <Route path="/chat/:campaignId/:creatorName" element={<ChatCampaign />} />
+
           
           {/* Catch-all route - redirect to home if logged in, otherwise to landing */}
           <Route path="*" element={

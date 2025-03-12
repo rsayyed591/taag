@@ -13,6 +13,7 @@ function Campaign() {
   const [showSpotlight, setShowSpotlight] = useState(true)
   const [userType, setUserType] = useState("brand") // Default to brand
   const [campaignInvites, setCampaignInvites] = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
 
   useEffect(() => {
     // Get user type from localStorage
@@ -23,7 +24,7 @@ function Campaign() {
 
     // If user is a creator, load campaign invites
     if (user.userType === "creator") {
-      loadCampaignInvites()
+      loadCampaignInvites(user)
     }
   }, [])
 
@@ -39,19 +40,24 @@ function Campaign() {
     setTotalInProgress(inProgress)
   }
 
-  const loadCampaignInvites = () => {
-    // In a real app, this would fetch from an API
-    // For now, we'll simulate invites based on existing campaigns
+  const loadCampaignInvites = (user) => {
     const storedCampaigns = JSON.parse(localStorage.getItem("campaigns")) || []
 
-    // Filter campaigns that might be relevant to this creator
-    // In a real app, this would be based on matching criteria
-    const invites = storedCampaigns.map((campaign) => ({
+    // Filter campaigns based on creator type matching or show all if no types defined
+    const relevantCampaigns = user.creatorTypes?.length
+      ? storedCampaigns.filter((campaign) => campaign.creatorTypes?.some((type) => user.creatorTypes.includes(type)))
+      : storedCampaigns
+
+    // Transform campaigns into invites
+    const invites = relevantCampaigns.map((campaign) => ({
       id: campaign.id,
       name: campaign.name,
-      brandName: "Brand Name", // In a real app, this would come from the campaign
+      brandName: campaign.brandName || "Brand Name",
       date: campaign.date,
-      status: "pending", // For creator, initial status is pending
+      budget: campaign.budget || [25000, 50000],
+      platform: campaign.platform || "instagram",
+      status: "pending",
+      creatorTypes: campaign.creatorTypes || [],
     }))
 
     setCampaignInvites(invites)
@@ -67,6 +73,14 @@ function Campaign() {
     // For now, we'll navigate to the chat
     navigate(`/chat/${campaignId}/Brand`)
   }
+
+  const filteredCampaigns = campaigns.filter((campaign) =>
+    campaign.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
+
+  const filteredInvites = campaignInvites.filter((invite) =>
+    invite.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  )
 
   const spotlightSteps = [
     {
@@ -116,7 +130,7 @@ function Campaign() {
       {/* New Campaign Button */}
       <button
         onClick={() => navigate("/campaign/new-campaign")}
-        className="w-full bg-white text-center py-3 rounded-lg font-medium tracking-wide mb-6 shadow-sm"
+        className="w-full bg-white text-center py-3 rounded-lg font-medium tracking-wide mb-6 shadow-sm hover:shadow-md transition-shadow"
       >
         NEW CAMPAIGN <span className="text-[#12766A]">+</span>
       </button>
@@ -143,6 +157,8 @@ function Campaign() {
           type="text"
           placeholder="Search by name, amount, etc."
           className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#12766A]"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
         <button className="absolute inset-y-0 right-3 flex items-center">
           <svg
@@ -163,13 +179,13 @@ function Campaign() {
       </div>
 
       {/* Campaign List */}
-      {campaigns.length > 0 ? (
+      {filteredCampaigns.length > 0 ? (
         <div className="space-y-3">
-          {campaigns.map((campaign) => (
+          {filteredCampaigns.map((campaign) => (
             <div
               key={campaign.id}
               onClick={() => navigate(`/campaign/view/${campaign.id}`)}
-              className="bg-white p-4 rounded-lg shadow-sm cursor-pointer"
+              className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className="flex justify-between items-center">
                 <div>
@@ -223,30 +239,85 @@ function Campaign() {
         <h2 className="text-lg font-medium">Campaigns</h2>
       </div>
 
-      {campaignInvites.length > 0 ? (
+      {/* Search Bar */}
+      <div className="relative mb-6">
+        <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+          <svg
+            className="w-4 h-4 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            ></path>
+          </svg>
+        </div>
+        <input
+          type="text"
+          placeholder="Search campaigns"
+          className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#12766A]"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <button className="absolute inset-y-0 right-3 flex items-center">
+          <svg
+            className="w-5 h-5 text-gray-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      {filteredInvites.length > 0 ? (
         <div className="space-y-4">
-          {campaignInvites.map((invite) => (
+          {filteredInvites.map((invite) => (
             <div key={invite.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="p-4">
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-medium">{invite.name}</h3>
                   <span className="text-xs text-gray-500">{invite.date}</span>
                 </div>
-                <p className="text-sm text-gray-500 mb-3">
-                  {invite.brandName} • {invite.status === "interested" ? "You're interested" : "New invitation"}
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-500">
+                    Platform: {invite.platform.charAt(0).toUpperCase() + invite.platform.slice(1)}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Budget: ₹{invite.budget[0].toLocaleString()} - ₹{invite.budget[1].toLocaleString()}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {invite.creatorTypes.map((type) => (
+                      <span key={type} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        {type}
+                      </span>
+                    ))}
+                  </div>
+                </div>
 
                 {invite.status === "pending" ? (
                   <button
                     onClick={() => handleInterested(invite.id)}
-                    className="w-full bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg"
+                    className="w-full mt-4 bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg hover:bg-[#D5E8E5] transition-colors"
                   >
                     Interested
                   </button>
                 ) : (
                   <button
                     onClick={() => navigate(`/chat/${invite.id}/Brand`)}
-                    className="w-full bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg"
+                    className="w-full mt-4 bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg hover:bg-[#D5E8E5] transition-colors"
                   >
                     View Chat
                   </button>
@@ -274,7 +345,7 @@ function Campaign() {
             </svg>
           </div>
           <h3 className="text-lg font-medium mb-1">No Campaign Invites</h3>
-          <p className="text-gray-500 mb-6">You'll see campaign invites here</p>
+          <p className="text-gray-500 mb-6">You'll see relevant campaign invites here</p>
         </div>
       )}
     </>
