@@ -3,15 +3,12 @@ import { auth } from '../../firebase.config';
 
 // Format phone number to E.164 format
 const formatPhoneNumber = (phoneNumber) => {
-  // Remove all non-digit characters
   const cleaned = phoneNumber.replace(/\D/g, '');
-  
-  // Make sure it has country code
   return cleaned.startsWith('91') ? `+${cleaned}` : `+91${cleaned}`;
 };
 
-// Send OTP with fixed reCAPTCHA implementation
-export const sendOTP = async (phoneNumber) => {
+// Send OTP with normal reCAPTCHA implementation
+export const sendOTP = async (phoneNumber, setConfirmationResult, setOtpSent) => {
   try {
     // Clear existing verifier if any
     if (window.recaptchaVerifier) {
@@ -24,46 +21,46 @@ export const sendOTP = async (phoneNumber) => {
     }
 
     // Format phone number
-    const formattedPhone = formatPhoneNumber(phoneNumber);
-    console.log("Formatted phone:", formattedPhone);
+    const phoneNumberWithCode = formatPhoneNumber(phoneNumber);
+    console.log("Formatted phone:", phoneNumberWithCode);
 
-    // Make sure the recaptcha container exists
-    const recaptchaContainer = document.getElementById('recaptcha-container');
-    if (!recaptchaContainer) {
-      console.error('Recaptcha container not found in the DOM');
-      return { 
-        success: false, 
-        error: 'Technical error: Recaptcha container not found' 
-      };
-    }
-
-    // Create new reCAPTCHA verifier with proper parameters
+    // Create new reCAPTCHA verifier
     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
-      'callback': (response) => {
-        // reCAPTCHA solved, allow signInWithPhoneNumber.
-        onSignInSubmit();
+      size: 'invisible',
+      //  sitekey: '6Le4aPlqAAAAAFfQSfadbg1Vjrwx9OzcQcv7pcab',
+      callback: (response) => {
+        console.log("response",response);
+        console.log("reCAPTCHA resolved");
+      },
+      'expired-callback': () => {
+        // Reset reCAPTCHA when expired
+        if (window.recaptchaVerifier) {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
+        }
       }
     });
 
     // Render the reCAPTCHA widget
     await window.recaptchaVerifier.render();
-    
+
     // Send OTP
-    console.log("Sending OTP to:", formattedPhone);
     const confirmationResult = await signInWithPhoneNumber(
       auth,
-      formattedPhone,
+      phoneNumberWithCode,
       window.recaptchaVerifier
     );
-    
+    console.log("confirmationResult",confirmationResult);
+
     window.confirmationResult = confirmationResult;
+    // setConfirmationResult(confirmationResult);
+    // setOtpSent(true);
     return { success: true };
 
   } catch (error) {
     console.error('Error sending OTP:', error);
     
-    // Clear verifier
+    // Clear verifier on error
     if (window.recaptchaVerifier) {
       try {
         await window.recaptchaVerifier.clear();
@@ -102,7 +99,6 @@ export const verifyOTP = async (otp) => {
         ? 'Invalid OTP. Please try again.'
         : error.message 
     };
-
   } finally {
     // Clean up reCAPTCHA
     if (window.recaptchaVerifier) {
