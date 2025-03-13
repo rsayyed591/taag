@@ -1,5 +1,5 @@
 import { IonAlert } from "@ionic/react"
-import { Building2, Camera, ChevronDown, HelpCircle, Lock, User, Users } from "lucide-react"
+import { Building2, Camera, ChevronDown, HelpCircle, Lock, LogOut, User, Users } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNavigation from "../../components/BottomNavigation"
@@ -241,11 +241,12 @@ function Profile() {
         }}
       />
 
-      <div className="profile-action-buttons">
-        <button 
+<div className="px-6 mt-0">
+        <button
           onClick={handleSignOut}
-          className="sign-out-button"
+          className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 font-medium py-3.5 rounded-full hover:bg-red-100 transition-colors"
         >
+          <LogOut className="w-5 h-5" />
           Sign Out
         </button>
       </div>

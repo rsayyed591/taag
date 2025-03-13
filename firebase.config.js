@@ -19,7 +19,15 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
-
+// const firebaseConfig = {
+//   apiKey: "AIzaSyC0SnGLDfIy_B6qmG2uBcoPlcLjdRayIn8",
+//   authDomain: "taag-1f34c.firebaseapp.com",
+//   projectId: "taag-1f34c",
+//   storageBucket: "taag-1f34c.firebasestorage.app",
+//   messagingSenderId: "188033701558",
+//   appId: "1:188033701558:web:bad771af1b3fc5f745f817",
+//   measurementId: "G-PZ1FW0T6B8"
+// };
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);

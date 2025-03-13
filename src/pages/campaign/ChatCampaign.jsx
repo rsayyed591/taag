@@ -27,7 +27,7 @@ function ChatCampaign() {
   })
 
   // Function to generate a unique chat key for this conversation
-  const getChatKey = () => `chat_${campaignId}_${creatorName} + ${campaignDetails?.name}` 
+  const getChatKey = () => `chat_${campaignId}_${creatorName}`
 
   useEffect(() => {
     // Get user type from localStorage
