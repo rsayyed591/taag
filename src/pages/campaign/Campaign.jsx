@@ -2,35 +2,109 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { Search, ArrowDownAZ, MessageCircle } from "lucide-react"
 import BottomNavigation from "../../components/BottomNavigation"
-import OnboardingSpotlight from "../../components/OnboardingSpotlight"
 
 function Campaign() {
   const navigate = useNavigate()
   const [campaigns, setCampaigns] = useState([])
+  const [brandName, setBrandName] = useState("")
   const [totalCompleted, setTotalCompleted] = useState(0)
   const [totalInProgress, setTotalInProgress] = useState(0)
-  const [showSpotlight, setShowSpotlight] = useState(true)
+  const [user, setUser] = useState({})
   const [userType, setUserType] = useState("brand") // Default to brand
   const [campaignInvites, setCampaignInvites] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
+  const [activeChats, setActiveChats] = useState({})
 
   useEffect(() => {
     // Get user type from localStorage
-    const user = JSON.parse(localStorage.getItem("currentUser")) || { userType: "brand" }
-    setUserType(user.userType)
-
+    const activeId = localStorage.getItem("activeProfileId")
+    const users = JSON.parse(localStorage.getItem("userProfiles")) || []
+    const user = users.find((c) => c.id === Number(activeId)) || { userType: "brand" }
+    setUser(user)
+    setUserType(user.userType.toLowerCase())
     loadCampaigns()
+    loadActiveChats()
 
     // If user is a creator, load campaign invites
-    if (user.userType === "creator") {
+    if (user.userType.toLowerCase() === "creator") {
       loadCampaignInvites(user)
+    }
+
+    // Set up storage event listener for real-time chat updates
+    const handleStorageChange = (e) => {
+      if (e.key && e.key.startsWith("chat_")) {
+        loadActiveChats()
+      }
+    }
+
+    // Set up custom event listener for real-time chat updates
+    const handleChatUpdate = (e) => {
+      if (e.detail && e.detail.key && e.detail.key.startsWith("chat_")) {
+        loadActiveChats()
+      }
+    }
+
+    window.addEventListener("storage", handleStorageChange)
+    window.addEventListener("chatUpdate", handleChatUpdate)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      window.removeEventListener("chatUpdate", handleChatUpdate)
     }
   }, [])
 
-  const loadCampaigns = () => {
+  // Function to load all active chats from localStorage
+  const loadActiveChats = () => {
+    const chats = {}
+    const currentUserType = userType.toLowerCase()
+
+    // Scan localStorage for chat keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key.startsWith("chat_")) {
+        try {
+          const messages = JSON.parse(localStorage.getItem(key)) || []
+          const [_, campaignId, creatorId] = key.split("_")
+
+          if (messages.length > 0) {
+            // Count unread messages (messages not from the current user type and not marked as read)
+            const unreadCount = messages.filter((m) => !m.read && m.sender !== currentUserType && !m.isStatus).length
+
+            chats[campaignId] = {
+              creatorName: creatorId,
+              lastMessage: messages[messages.length - 1],
+              unreadCount: unreadCount,
+            }
+          }
+        } catch (error) {
+          console.error(`Error parsing chat data for key ${key}:`, error)
+        }
+      }
+    }
+
+    setActiveChats(chats)
+
+    // Update campaigns with chat data
+    loadCampaigns(chats)
+  }
+
+  const loadCampaigns = (chatData = activeChats) => {
     const storedCampaigns = JSON.parse(localStorage.getItem("campaigns")) || []
-    setCampaigns(storedCampaigns)
+
+    // Add chat data to campaigns
+    const campaignsWithChatData = storedCampaigns.map((campaign) => {
+      const chat = chatData[campaign.id]
+      return {
+        ...campaign,
+        hasUnreadMessages: chat?.unreadCount > 0,
+        lastMessage: chat?.lastMessage,
+        unreadCount: chat?.unreadCount || 0,
+      }
+    })
+
+    setCampaigns(campaignsWithChatData)
 
     // Calculate statistics
     const completed = storedCampaigns.filter((c) => c.status === "completed").length
@@ -41,61 +115,124 @@ function Campaign() {
   }
 
   const loadCampaignInvites = (user) => {
-    const storedCampaigns = JSON.parse(localStorage.getItem("campaigns")) || []
+    const storedCampaigns = JSON.parse(localStorage.getItem("campaigns")) || [];
+const userCreatorTypes = user.creatorDetails?.category || [];
+const activeId = Number(localStorage.getItem("activeProfileId")); // Ensure activeId is a number
 
-    // Filter campaigns based on creator type matching or show all if no types defined
-    const relevantCampaigns = user.creatorTypes?.length
-      ? storedCampaigns.filter((campaign) => campaign.creatorTypes?.some((type) => user.creatorTypes.includes(type)))
-      : storedCampaigns
+// Filter campaigns where the creator's ID is in campaign.creators OR matches category
+const relevantCampaigns = storedCampaigns.filter((campaign) =>
+  campaign.creators?.some((creator) => creator.id === activeId) ||  // Match creator ID
+  (campaign.creatorTypes?.length && campaign.creatorTypes.some((type) => userCreatorTypes.includes(type))) // Match category
+);
+console.log("Relevant campaigns:", relevantCampaigns);
+// Transform campaigns into invites
+const invites = relevantCampaigns.map((campaign) => {
+  const chatData = activeChats[campaign.id] || {}; // Safe fallback for chat data
 
-    // Transform campaigns into invites
-    const invites = relevantCampaigns.map((campaign) => ({
-      id: campaign.id,
-      name: campaign.name,
-      brandName: campaign.brandName || "Brand Name",
-      date: campaign.date,
-      budget: campaign.budget || [25000, 50000],
-      platform: campaign.platform || "instagram",
-      status: "pending",
-      creatorTypes: campaign.creatorTypes || [],
-    }))
+  return {
+    id: campaign.id,
+    name: campaign.name,
+    brandName: campaign.name || "MamaEarth",
+    date: campaign.date,
+    budget: campaign.budget || [25000, 50000],
+    platform: campaign.platform || "instagram",
+    status: "pending",
+    creatorTypes: campaign.creatorTypes || [],
+    hasUnreadMessages: chatData.unreadCount > 0, // Safe access
+    lastMessage: chatData.lastMessage || "", // Safe fallback
+  };
+});
 
-    setCampaignInvites(invites)
+setCampaignInvites(invites);
+
+
   }
 
-  const handleInterested = (campaignId) => {
+  const handleInterested = (campaignId, brandName) => {
     // Update the campaign invite status
     setCampaignInvites((prev) =>
       prev.map((invite) => (invite.id === campaignId ? { ...invite, status: "interested" } : invite)),
     )
+    setBrandName(brandName)
+    // Create a chat key for this conversation
+    const chatKey = `chat_${campaignId}_${user.name} + ${brandName}`
+    console.log("Chat key:", chatKey)
 
-    // In a real app, this would send a notification to the brand
-    // For now, we'll navigate to the chat
-    navigate(`/chat/${campaignId}/Brand`)
+    // Check if chat already exists
+    const existingChat = localStorage.getItem(chatKey)
+    if (!existingChat) {
+      // Initialize chat with a system message
+      const initialMessage = {
+        id: Date.now(),
+        text: "Campaign started successfully!",
+        sender: "system",
+        timestamp: new Date().toISOString(),
+        isStatus: true,
+      }
+
+      localStorage.setItem(chatKey, JSON.stringify([initialMessage]))
+
+      // Broadcast chat update
+      const event = new CustomEvent("chatUpdate", {
+        detail: {
+          key: chatKey,
+          messages: [initialMessage],
+        },
+      })
+      window.dispatchEvent(event)
+    }
+
+    // Navigate to the chat
+    navigate(`/chat/${campaignId}/${user.name} + ${brandName}`)
+  }
+
+  const navigateToChat = (campaignId, creatorName) => {
+    // Mark messages as read when navigating to chat
+    const chatKey = `chat_${campaignId}_${user.name} + ${campaign.brandName}`
+    const messages = JSON.parse(localStorage.getItem(chatKey)) || []
+
+    // Only mark messages as read if they're from the other user type
+    const updatedMessages = messages.map((msg) => ({
+      ...msg,
+      read: msg.sender !== userType.toLowerCase() ? true : msg.read,
+    }))
+
+    localStorage.setItem(chatKey, JSON.stringify(updatedMessages))
+
+    // Broadcast chat update
+    const event = new CustomEvent("chatUpdate", {
+      detail: {
+        key: chatKey,
+        messages: updatedMessages,
+      },
+    })
+    window.dispatchEvent(event)
+
+    // Navigate to chat
+    navigate(`/chat/${campaignId}/${creatorName}`)
   }
 
   const filteredCampaigns = campaigns.filter((campaign) =>
-    campaign.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    campaign.name?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const filteredInvites = campaignInvites.filter((invite) =>
-    invite.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    invite.name?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const spotlightSteps = [
-    {
-      title: "Welcome to Campaigns",
-      description: "Create and manage your campaigns on this page!",
-    },
-    {
-      title: "Campaign Stats",
-      description: "Track your completed and in-progress campaigns here.",
-    },
-    {
-      title: "Create Campaign",
-      description: "Click the + button to start a new campaign.",
-    },
-  ]
+  // Format timestamp for display
+  const formatTime = (timestamp) => {
+    if (!timestamp) return ""
+
+    const date = new Date(timestamp)
+    const today = new Date()
+
+    if (date.toDateString() === today.toDateString()) {
+      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    }
+
+    return date.toLocaleDateString([], { month: "short", day: "numeric" })
+  }
 
   // Brand view - shows campaign management UI
   const BrandView = () => (
@@ -138,20 +275,7 @@ function Campaign() {
       {/* Search Bar */}
       <div className="relative mb-6">
         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-          <svg
-            className="w-4 h-4 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            ></path>
-          </svg>
+          <Search className="w-4 h-4 text-gray-500" />
         </div>
         <input
           type="text"
@@ -161,20 +285,7 @@ function Campaign() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <button className="absolute inset-y-0 right-3 flex items-center">
-          <svg
-            className="w-5 h-5 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-            ></path>
-          </svg>
+          <ArrowDownAZ className="w-5 h-5 text-gray-500" />
         </button>
       </div>
 
@@ -184,23 +295,40 @@ function Campaign() {
           {filteredCampaigns.map((campaign) => (
             <div
               key={campaign.id}
-              onClick={() => navigate(`/campaign/view/${campaign.id}`)}
               className="bg-white p-4 rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
             >
               <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium">{campaign.name}</h3>
+                <div onClick={() => navigate(`/campaign/view/${campaign.id}`)}>
+                  <h3 className="font-medium">{campaign.name || "Campaign Name"}</h3>
                   <p className="text-sm text-gray-500">{campaign.creators?.length || 0} Creators</p>
                 </div>
-                <div className="text-right">
+                <div className="flex flex-col items-end">
                   <p
                     className={`text-sm font-medium ${
                       campaign.status === "Brand Confirmed" ? "text-[#12766A]" : "text-amber-500"
                     }`}
                   >
-                    {campaign.status}
+                    {campaign.status || "In Progress"}
                   </p>
-                  <p className="text-xs text-gray-500">{campaign.date}</p>
+                  <p className="text-xs text-gray-500">{campaign.date || "Today"}</p>
+
+                  {/* Chat button with notification indicator */}
+                  {campaign.creators?.length > 0 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigateToChat(campaign.id, campaign.creators[0])
+                      }}
+                      className="mt-2 flex items-center text-[#12766A]"
+                    >
+                      <MessageCircle size={18} />
+                      {activeChats[campaign.id]?.unreadCount > 0 && (
+                        <span className="ml-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                          {activeChats[campaign.id]?.unreadCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -235,27 +363,13 @@ function Campaign() {
   const CreatorView = () => (
     <>
       <div className="mb-4">
-        <p className="text-sm text-gray-500 mb-1">Brand Name</p>
-        <h2 className="text-lg font-medium">Campaigns</h2>
+        <h2 className="text-lg font-medium">Creator Chats with brand</h2>
       </div>
 
       {/* Search Bar */}
       <div className="relative mb-6">
         <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-          <svg
-            className="w-4 h-4 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            ></path>
-          </svg>
+          <Search className="w-4 h-4 text-gray-500" />
         </div>
         <input
           type="text"
@@ -265,20 +379,7 @@ function Campaign() {
           onChange={(e) => setSearchTerm(e.target.value)}
         />
         <button className="absolute inset-y-0 right-3 flex items-center">
-          <svg
-            className="w-5 h-5 text-gray-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
-            ></path>
-          </svg>
+          <ArrowDownAZ className="w-5 h-5 text-gray-500" />
         </button>
       </div>
 
@@ -288,38 +389,43 @@ function Campaign() {
             <div key={invite.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
               <div className="p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-medium">{invite.name}</h3>
-                  <span className="text-xs text-gray-500">{invite.date}</span>
+                  <h3 className="font-medium">{invite.brandName}</h3>
+                  <span className="text-xs text-gray-500">
+                    {invite.lastMessage ? formatTime(invite.lastMessage.timestamp) : invite.date}
+                  </span>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-500">
-                    Platform: {invite.platform.charAt(0).toUpperCase() + invite.platform.slice(1)}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Budget: ₹{invite.budget[0].toLocaleString()} - ₹{invite.budget[1].toLocaleString()}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {invite.creatorTypes.map((type) => (
-                      <span key={type} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                        {type}
-                      </span>
-                    ))}
+
+                {invite.lastMessage && !invite.lastMessage.isStatus ? (
+                  <p className="text-sm text-gray-600 mb-2 truncate">{invite.lastMessage.text}</p>
+                ) : (
+                  <div className="space-y-2 mb-2">
+                    <p className="text-sm text-gray-500">
+                      Platform: {invite.platform.charAt(0).toUpperCase() + invite.platform.slice(1)}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Budget: ₹{invite.budget[0].toLocaleString()} - ₹{invite.budget[1].toLocaleString()}
+                    </p>
                   </div>
-                </div>
+                )}
 
                 {invite.status === "pending" ? (
                   <button
-                    onClick={() => handleInterested(invite.id)}
-                    className="w-full mt-4 bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg hover:bg-[#D5E8E5] transition-colors"
+                    onClick={() => handleInterested(invite.id, invite.brandName)}
+                    className="w-full mt-2 bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg hover:bg-[#D5E8E5] transition-colors"
                   >
                     Interested
                   </button>
                 ) : (
                   <button
-                    onClick={() => navigate(`/chat/${invite.id}/Brand`)}
-                    className="w-full mt-4 bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg hover:bg-[#D5E8E5] transition-colors"
+                    onClick={() => navigateToChat(invite.id, invite.brandName)}
+                    className="w-full mt-2 bg-[#E5F0EE] text-[#12766A] font-medium py-2 rounded-lg hover:bg-[#D5E8E5] transition-colors flex items-center justify-center"
                   >
-                    View Chat
+                    <span>View Chat</span>
+                    {invite.hasUnreadMessages && (
+                      <span className="ml-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                        {activeChats[invite.id]?.unreadCount || 1}
+                      </span>
+                    )}
                   </button>
                 )}
               </div>
@@ -353,8 +459,6 @@ function Campaign() {
 
   return (
     <div className="min-h-screen bg-gray-100 pb-20">
-      {showSpotlight && <OnboardingSpotlight steps={spotlightSteps} onComplete={() => setShowSpotlight(false)} />}
-
       <div className="px-4 py-6">
         <h1 className="text-2xl font-semibold mb-6">Campaigns</h1>
 

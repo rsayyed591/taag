@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { Range } from "react-range"
+import { Calendar, ChevronDown } from "lucide-react"
 
 function NewCampaign() {
   const navigate = useNavigate()
@@ -45,13 +47,13 @@ function NewCampaign() {
   }
 
   const formatCurrency = (value) => {
-    return `₹${(value / 1000).toFixed(0)}K`
+    return `₹${value >= 100000 ? (value / 100000).toFixed(1) + "L" : (value / 1000).toFixed(0) + "K"}`
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex items-center p-4 border-b bg-white">
-        <button onClick={() => navigate(-1)} className="mr-4">
+        <button onClick={() => navigate(-1)} className="mr-4 text-gray-700">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M19 12H5" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M12 19L5 12L12 5" stroke="#111827" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -114,7 +116,7 @@ function NewCampaign() {
                     [formData.platform === "instagram" ? "instadeliverable" : "ytdeliverable"]: e.target.value,
                   }))
                 }
-                className="w-full p-3 rounded-lg border border-gray-200 appearance-none focus:outline-none focus:ring-1 focus:ring-[#12766A]"
+                className="w-full p-3 rounded-lg border border-gray-200 appearance-none focus:outline-none focus:ring-1 focus:ring-[#12766A] bg-white"
               >
                 <option value="">Select Deliverable</option>
                 <option value="review">Product Review</option>
@@ -122,15 +124,7 @@ function NewCampaign() {
                 <option value="tutorial">Tutorial</option>
               </select>
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M4 6L8 10L12 6"
-                    stroke="#6B7280"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <ChevronDown size={16} className="text-gray-500" />
               </div>
             </div>
           </div>
@@ -148,39 +142,10 @@ function NewCampaign() {
                     [formData.platform === "instagram" ? "instatimeline" : "yttimeline"]: e.target.value,
                   }))
                 }
-                className="w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#12766A]"
+                className="w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#12766A] appearance-none"
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    d="M15.8333 3.33334H4.16667C3.24619 3.33334 2.5 4.07954 2.5 5.00001V16.6667C2.5 17.5872 3.24619 18.3333 4.16667 18.3333H15.8333C16.7538 18.3333 17.5 17.5872 17.5 16.6667V5.00001C17.5 4.07954 16.7538 3.33334 15.8333 3.33334Z"
-                    stroke="#6B7280"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M13.3333 1.66666V4.99999"
-                    stroke="#6B7280"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M6.66669 1.66666V4.99999"
-                    stroke="#6B7280"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M2.5 8.33334H17.5"
-                    stroke="#6B7280"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <Calendar size={18} className="text-gray-500" />
               </div>
             </div>
           </div>
@@ -193,34 +158,25 @@ function NewCampaign() {
             <span>Min</span>
             <span>Max</span>
           </div>
-          <div className="relative mb-6 pt-1">
-            <input
-              type="range"
-              min={10000}
-              max={100000}
+          <div className="py-6">
+            <Range
               step={5000}
-              value={formData.budget[0]}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  budget: [Number(e.target.value), prev.budget[1]],
-                }))
-              }
-              className="w-full appearance-none h-1 bg-gray-200 rounded-full outline-none"
-            />
-            <input
-              type="range"
               min={10000}
-              max={100000}
-              step={5000}
-              value={formData.budget[1]}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  budget: [prev.budget[0], Number(e.target.value)],
-                }))
-              }
-              className="w-full appearance-none h-1 bg-gray-200 rounded-full outline-none mt-2"
+              max={1000000}
+              values={formData.budget}
+              onChange={(values) => setFormData((prev) => ({ ...prev, budget: values }))}
+              renderTrack={({ props, children }) => (
+                <div {...props} className="w-full h-1 bg-gray-200 rounded-full" style={{ ...props.style }}>
+                  {children}
+                </div>
+              )}
+              renderThumb={({ props, isDragged }) => (
+                <div
+                  {...props}
+                  className={`w-5 h-5 rounded-full focus:outline-none ${isDragged ? "bg-[#0D5D53]" : "bg-[#12766A]"}`}
+                  style={{ ...props.style, boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)" }}
+                />
+              )}
             />
             <div className="flex justify-between mt-2">
               <span className="text-xs font-medium">{formatCurrency(formData.budget[0])}</span>
@@ -249,7 +205,7 @@ function NewCampaign() {
         </div>
 
         {/* Submit Button */}
-        <button type="submit" className="w-full bg-[#E5F0EE] text-[#12766A] font-medium py-3 rounded-lg mt-8">
+        <button type="submit" className="w-full bg-[#E5F0EE] text-[#12766A] font-medium py-3 rounded-full mt-8">
           Create Campaign
         </button>
       </form>
