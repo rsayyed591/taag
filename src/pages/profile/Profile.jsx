@@ -3,11 +3,13 @@ import { Building2, Camera, ChevronDown, HelpCircle, Lock, User, Users } from "l
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNavigation from "../../components/BottomNavigation"
+import { useAuth } from "../../context/AuthContext"
 import { getUserProfile } from "../../services/userProfile"
 
 function Profile() {
   const navigate = useNavigate()
   const [showSpotlight, setShowSpotlight] = useState(false)
+  const { user, loading } = useAuth()
   // const [profiles, setProfiles] = useState([])
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [showProfileList, setShowProfileList] = useState(false)
