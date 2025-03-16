@@ -3,17 +3,18 @@ import { Building2, Camera, ChevronDown, HelpCircle, Lock, LogOut, User, Users }
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNavigation from "../../components/BottomNavigation"
-import { useAuth } from "../../context/AuthContext"
 import { getUserProfile } from "../../services/userProfile"
+import { useAuth } from "../../context/AuthContext"
 
 function Profile() {
   const navigate = useNavigate()
   const [showSpotlight, setShowSpotlight] = useState(false)
-  const { user, loading } = useAuth()
   // const [profiles, setProfiles] = useState([])
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [showProfileList, setShowProfileList] = useState(false)
   const [showImageOptions, setShowImageOptions] = useState(null) // 'avatar' or 'cover' or null
+    const { user } = useAuth();
+  
   useEffect(() => {
     const fetchProfile = async () => {
       
@@ -29,7 +30,7 @@ function Profile() {
     };
 
     fetchProfile();
-  }, [user, loading]);
+  }, [user]);
   // useEffect(() => {
   //   const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []
   //   setProfiles(storedProfiles)
@@ -154,7 +155,7 @@ function Profile() {
             <ChevronDown className="w-4 h-4 ml-1" />
           </button>
         </div>
-        <p className="text-[#12766A]">{selectedProfile.creatorDetails.instagram.url || "@anonymous"}</p>
+        {/* <p className="text-[#12766A]">{selectedProfile.creatorDetails.instagram.url || "@anonymous"}</p> */}
       </div>
 
 
@@ -276,4 +277,3 @@ function Profile() {
 }
 
 export default Profile
-
