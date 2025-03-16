@@ -3,34 +3,53 @@ import { Building2, Camera, ChevronDown, HelpCircle, Lock, LogOut, User, Users }
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import BottomNavigation from "../../components/BottomNavigation"
+import { useAuth } from "../../context/AuthContext"
+import { getUserProfile } from "../../services/userProfile"
 
 function Profile() {
   const navigate = useNavigate()
   const [showSpotlight, setShowSpotlight] = useState(false)
-  const [profiles, setProfiles] = useState([])
+  const { user, loading } = useAuth()
+  // const [profiles, setProfiles] = useState([])
   const [selectedProfile, setSelectedProfile] = useState(null)
   const [showProfileList, setShowProfileList] = useState(false)
   const [showImageOptions, setShowImageOptions] = useState(null) // 'avatar' or 'cover' or null
-
   useEffect(() => {
-    const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []
-    setProfiles(storedProfiles)
+    const fetchProfile = async () => {
+      
+        try {
+          const { success, profile } = await getUserProfile();
+          if (success ) {
+            setSelectedProfile(profile);
+          }
+        } catch (error) {
+          console.error('Error fetching profile:', error);
+        }
+      
+    };
 
-    const activeProfileId = localStorage.getItem("activeProfileId")
+    fetchProfile();
+  }, [user, loading]);
+  // useEffect(() => {
+  //   const storedProfiles = JSON.parse(localStorage.getItem("userProfiles")) || []
+  //   setProfiles(storedProfiles)
+    
 
-    if (activeProfileId) {
-      const activeProfile = storedProfiles.find((profile) => String(profile.id) === String(activeProfileId))
-      setSelectedProfile(activeProfile || storedProfiles[0])
-    } else if (storedProfiles.length > 0) {
-      setSelectedProfile(storedProfiles[0])
-      localStorage.setItem("activeProfileId", storedProfiles[0].id)
-    }
+  //   const activeProfileId = localStorage.getItem("activeProfileId")
 
-    const hasSeenSpotlight = localStorage.getItem("hasSeenProfileSpotlight")
-    if (!hasSeenSpotlight) {
-      setShowSpotlight(true)
-    }
-  }, [])
+  //   if (activeProfileId) {
+  //     const activeProfile = storedProfiles.find((profile) => String(profile.id) === String(activeProfileId))
+  //     setSelectedProfile(activeProfile || storedProfiles[0])
+  //   } else if (storedProfiles.length > 0) {
+  //     setSelectedProfile(storedProfiles[0])
+  //     localStorage.setItem("activeProfileId", storedProfiles[0].id)
+  //   }
+
+  //   const hasSeenSpotlight = localStorage.getItem("hasSeenProfileSpotlight")
+  //   if (!hasSeenSpotlight) {
+  //     setShowSpotlight(true)
+  //   }
+  // }, [])
 
   const switchProfile = (profile) => {
     setSelectedProfile(profile)
@@ -42,7 +61,7 @@ function Profile() {
     const file = event.target.files[0]
     if (!file) return
 
-    const reader = new FileReader()
+    const reader = new FileReader() 
     reader.onloadend = () => {
       const updatedProfile = { ...selectedProfile }
 
@@ -60,7 +79,7 @@ function Profile() {
         String(profile.id) === String(selectedProfile.id) ? updatedProfile : profile,
       )
 
-      setProfiles(updatedProfiles)
+      setSelectedProfile(updatedProfiles)
       localStorage.setItem("userProfiles", JSON.stringify(updatedProfiles))
 
       // Close the image options

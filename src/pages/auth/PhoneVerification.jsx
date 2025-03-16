@@ -47,7 +47,7 @@ function PhoneVerification() {
       {/* Move recaptcha-container to top level and make it visible */}
       <div 
         id="recaptcha-container" 
-        style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', opacity: 0 }}
+        className="recaptcha-container"
       ></div>
 
       <div className="content-container">
@@ -103,3 +103,4 @@ function PhoneVerification() {
 }
 
 export default PhoneVerification;
+
